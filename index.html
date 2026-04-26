@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  <title>アプリ置き場</title>
+
+  <link rel="icon" href="icon.png?v=1">
+  <link rel="shortcut icon" href="icon.png?v=1">
+  <link rel="apple-touch-icon" href="icon.png?v=1">
+
+  <style>
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: Arial, sans-serif;
+      background: linear-gradient(135deg, #0f172a, #1e293b);
+      color: white;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .box {
+      width: 90%;
+      max-width: 420px;
+      padding: 28px;
+      border-radius: 24px;
+      background: rgba(255,255,255,0.12);
+      box-shadow: 0 20px 40px rgba(0,0,0,0.35);
+      text-align: center;
+    }
+
+    h1 {
+      margin-top: 0;
+      font-size: 28px;
+    }
+
+    .app {
+      display: block;
+      margin: 14px 0;
+      padding: 18px;
+      border-radius: 16px;
+      background: rgba(255,255,255,0.18);
+      color: white;
+      text-decoration: none;
+      font-weight: bold;
+    }
+
+    .app:active {
+      transform: scale(0.98);
+    }
+  </style>
+</head>
+
+<body>
+  <div class="box">
+    <h1>アプリ置き場</h1>
+    <p>使いたいアプリを選んでください</p>
+
+    <a class="app" href="ここにGASのURL">金価格監視</a>
+    <a class="app" href="ここにGASのURL">CFD監視</a>
+    <a class="app" href="ここにGASのURL">ログ確認</a>
+  </div>
+</body>
+</html>
