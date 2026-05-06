@@ -1,1807 +1,497 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>体重管理アプリ</title>
-  <style>
-    :root {
-      --bg: #f4f6f8;
-      --card: #ffffff;
-      --main: #2563eb;
-      --main-light: #dbeafe;
-      --accent: #16a34a;
-      --danger: #dc2626;
-      --text: #1f2937;
-      --muted: #6b7280;
-      --border: #d1d5db;
-      --shadow: 0 8px 24px rgba(15, 23, 42, 0.08);
-    }
-
-    * { box-sizing: border-box; }
-
-    body {
-      margin: 0;
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-      background: var(--bg);
-      color: var(--text);
-    }
-
-    header {
-      position: sticky;
-      top: 0;
-      z-index: 10;
-      background: rgba(255,255,255,0.95);
-      backdrop-filter: blur(10px);
-      border-bottom: 1px solid var(--border);
-      padding: 12px 16px;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-    }
-
-    h1 {
-      font-size: 20px;
-      margin: 0;
-    }
-
-    h2 {
-      font-size: 17px;
-      margin: 0 0 12px;
-    }
-
-    main {
-      max-width: 980px;
-      margin: 0 auto;
-      padding: 16px;
-    }
-
-    .card {
-      background: var(--card);
-      border-radius: 18px;
-      padding: 16px;
-      margin-bottom: 16px;
-      box-shadow: var(--shadow);
-      border: 1px solid rgba(209, 213, 219, 0.7);
-    }
-
-    .date-box {
-      display: flex;
-      gap: 8px;
-      align-items: center;
-      color: var(--muted);
-      font-size: 14px;
-      margin-bottom: 12px;
-    }
-
-    .grid {
-      display: grid;
-      grid-template-columns: repeat(3, minmax(0, 1fr));
-      gap: 12px;
-    }
-
-    @media (max-width: 720px) {
-      .grid {
-        grid-template-columns: repeat(2, minmax(0, 1fr));
-      }
-    }
-
-    @media (max-width: 420px) {
-      .grid {
-        grid-template-columns: 1fr;
-      }
-    }
-
-    label {
-      display: block;
-      font-size: 13px;
-      font-weight: 700;
-      margin-bottom: 5px;
-    }
-
-    .field {
-      display: flex;
-      align-items: center;
-      border: 1px solid var(--border);
-      border-radius: 12px;
-      overflow: hidden;
-      background: #fff;
-    }
-
-    input {
-      width: 100%;
-      border: 0;
-      padding: 11px 10px;
-      font-size: 16px;
-      outline: none;
-      background: transparent;
-    }
-
-    .unit {
-      min-width: 52px;
-      text-align: center;
-      color: var(--muted);
-      font-size: 13px;
-      padding-right: 8px;
-    }
-
-    .section-title {
-      font-weight: 800;
-      margin: 8px 0 10px;
-      padding-left: 8px;
-      border-left: 4px solid var(--main);
-    }
-
-    .buttons {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 8px;
-      margin: 10px 0;
-    }
-
-    button {
-      border: 0;
-      border-radius: 999px;
-      padding: 10px 14px;
-      font-weight: 700;
-      cursor: pointer;
-      background: #e5e7eb;
-      color: var(--text);
-      transition: 0.15s ease;
-    }
-
-    button:hover { transform: translateY(-1px); }
-
-    button.primary {
-      background: var(--main);
-      color: #fff;
-    }
-
-    button.success {
-      background: var(--accent);
-      color: #fff;
-    }
-
-    button.danger {
-      background: var(--danger);
-      color: #fff;
-    }
-
-    button.active {
-      background: var(--main);
-      color: #fff;
-      box-shadow: 0 0 0 3px var(--main-light);
-    }
-
-    button:disabled {
-      opacity: 0.45;
-      cursor: not-allowed;
-      transform: none;
-    }
-
-    .save-area {
-      display: flex;
-      justify-content: flex-end;
-      gap: 8px;
-      margin-top: 14px;
-    }
-
-    canvas {
-      width: 100%;
-      height: 360px;
-      border-radius: 14px;
-      background: #fff;
-      border: 1px solid var(--border);
-      touch-action: none;
-    }
-
-    .hint {
-      font-size: 12px;
-      color: var(--muted);
-      margin-top: 8px;
-      line-height: 1.6;
-    }
-
-    .modal {
-      position: fixed;
-      inset: 0;
-      display: none;
-      background: rgba(15,23,42,0.55);
-      z-index: 100;
-      padding: 14px;
-    }
-
-    .modal.show { display: block; }
-
-    .modal-panel {
-      max-width: 980px;
-      margin: 24px auto;
-      background: var(--card);
-      border-radius: 18px;
-      padding: 16px;
-      max-height: calc(100vh - 48px);
-      overflow: auto;
-      box-shadow: var(--shadow);
-    }
-
-    .modal-head {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      gap: 8px;
-      margin-bottom: 12px;
-    }
-
-    .history-table {
-      width: 100%;
-      border-collapse: collapse;
-      font-size: 13px;
-      min-width: 900px;
-    }
-
-    .table-wrap {
-      overflow-x: auto;
-      border: 1px solid var(--border);
-      border-radius: 12px;
-    }
-
-    th, td {
-      border-bottom: 1px solid var(--border);
-      padding: 8px;
-      text-align: right;
-      white-space: nowrap;
-    }
-
-    th:first-child, td:first-child,
-    th:nth-child(2), td:nth-child(2) {
-      text-align: center;
-    }
-
-    th {
-      background: #f9fafb;
-      position: sticky;
-      top: 0;
-      z-index: 1;
-    }
-
-    .fullscreen {
-      position: fixed;
-      inset: 0;
-      display: none;
-      background: #fff;
-      z-index: 200;
-      padding: 10px;
-      flex-direction: column;
-    }
-
-    .fullscreen.show { display: flex; }
-
-    .full-head {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      gap: 8px;
-      padding-bottom: 8px;
-    }
-
-    #fullCanvas {
-      flex: 1;
-      height: calc(100vh - 72px);
-    }
-
-    .tooltip {
-      position: fixed;
-      pointer-events: none;
-      background: #111827;
-      color: #fff;
-      padding: 8px 10px;
-      border-radius: 10px;
-      font-size: 12px;
-      display: none;
-      z-index: 300;
-      max-width: 260px;
-      line-height: 1.5;
-    }
-
-    .notice-list {
-      line-height: 1.8;
-      margin: 0;
-      padding-left: 20px;
-    }
-
-
-
-    .voice-simple-box {
-      margin: 12px 0;
-      padding: 12px;
-      border: 1px solid var(--border);
-      border-radius: 14px;
-      background: #f9fafb;
-    }
-
-    .voice-main-btn {
-      width: 100%;
-      font-size: 16px;
-      padding: 14px 18px;
-    }
-
-    .voice-modal {
-      position: fixed;
-      inset: 0;
-      z-index: 500;
-      background: rgba(15, 23, 42, 0.58);
-      display: none;
-      padding: 14px;
-      overflow-y: auto;
-    }
-
-    .voice-modal.show {
-      display: block;
-    }
-
-    .voice-modal-panel {
-      width: 100%;
-      max-width: 640px;
-      margin: 16px auto;
-      background: #fff;
-      border-radius: 20px;
-      padding: 16px;
-      box-shadow: var(--shadow);
-    }
-
-    .voice-modal-title {
-      font-size: 20px;
-      font-weight: 800;
-      margin: 0 0 10px;
-    }
-
-    .voice-list {
-      display: flex;
-      flex-direction: column;
-      gap: 8px;
-      margin: 12px 0;
-    }
-
-    .voice-row {
-      display: flex;
-      justify-content: space-between;
-      gap: 10px;
-      align-items: center;
-      border: 1px solid var(--border);
-      background: #f9fafb;
-      border-radius: 12px;
-      padding: 10px 12px;
-      font-size: 14px;
-    }
-
-    .voice-row.active {
-      background: #dbeafe;
-      border-color: #93c5fd;
-      color: #1d4ed8;
-      font-weight: 800;
-    }
-
-    .voice-row.done {
-      background: #f0fdf4;
-      border-color: #bbf7d0;
-    }
-
-    .voice-value {
-      font-weight: 800;
-      text-align: right;
-      white-space: nowrap;
-    }
-
-    .voice-blink {
-      animation: voiceBlink 1s infinite;
-    }
-
-    @keyframes voiceBlink {
-      0%, 100% { opacity: 1; }
-      50% { opacity: 0.28; }
-    }
-
-    .voice-recognition-box {
-      margin-top: 12px;
-      padding: 12px;
-      border-radius: 14px;
-      background: #f8fafc;
-      border: 1px solid var(--border);
-      line-height: 1.7;
-      font-size: 14px;
-    }
-
-    .voice-modal-buttons {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 8px;
-      margin-top: 12px;
-    }
-
-    .voice-hidden {
-      display: none !important;
-    }
-
-    button.warning {
-      background: #f97316;
-      color: #fff;
-    }
-
-    .voice-box {
-      margin: 12px 0;
-      padding: 12px;
-      border: 1px solid var(--border);
-      border-radius: 14px;
-      background: #f9fafb;
-    }
-
-    .voice-result {
-      margin-top: 8px;
-      font-size: 13px;
-      color: var(--muted);
-      line-height: 1.6;
-      min-height: 20px;
-      word-break: break-word;
-    }
-
-    .voice-result strong {
-      color: var(--text);
-    }
-
-    button.listening {
-      background: #f97316;
-      color: #fff;
-      box-shadow: 0 0 0 3px #fed7aa;
-    }
-
-    code {
-      background: #eef2ff;
-      padding: 2px 6px;
-      border-radius: 6px;
-      color: #3730a3;
-    }
-  </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>体重管理アプリ</title>
+
+<style>
+:root{
+  --main:#2563eb;
+  --bg:#f3f4f6;
+  --card:#ffffff;
+  --border:#dbe2ea;
+  --success:#16a34a;
+  --danger:#dc2626;
+  --text:#111827;
+  --muted:#6b7280;
+}
+
+*{
+  box-sizing:border-box;
+}
+
+body{
+  margin:0;
+  background:var(--bg);
+  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+  color:var(--text);
+}
+
+.container{
+  max-width:720px;
+  margin:auto;
+  padding:24px;
+}
+
+.card{
+  background:var(--card);
+  border-radius:24px;
+  padding:24px;
+  margin-bottom:24px;
+  box-shadow:0 4px 16px rgba(0,0,0,0.06);
+}
+
+h1{
+  margin-top:0;
+}
+
+button{
+  border:none;
+  border-radius:14px;
+  padding:14px 18px;
+  font-size:16px;
+  font-weight:700;
+}
+
+.primary{
+  background:var(--main);
+  color:white;
+}
+
+.success{
+  background:var(--success);
+  color:white;
+}
+
+.danger{
+  background:var(--danger);
+  color:white;
+}
+
+input{
+  width:100%;
+  padding:14px;
+  border-radius:14px;
+  border:1px solid var(--border);
+  font-size:16px;
+}
+
+.grid{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:14px;
+}
+
+.voice-modal{
+  position:fixed;
+  inset:0;
+  background:rgba(0,0,0,0.6);
+  display:flex;
+  justify-content:center;
+  align-items:center;
+  padding:20px;
+  z-index:9999;
+}
+
+.hidden{
+  display:none;
+}
+
+.voice-modal-content{
+  width:100%;
+  max-width:560px;
+  background:white;
+  border-radius:24px;
+  padding:24px;
+}
+
+.voice-list{
+  display:flex;
+  flex-direction:column;
+  gap:10px;
+  margin-top:20px;
+}
+
+.voice-item{
+  border-radius:14px;
+  padding:14px;
+  background:#f8fafc;
+  border:2px solid transparent;
+  cursor:pointer;
+  font-weight:600;
+}
+
+.voice-item.active{
+  border-color:var(--main);
+  color:var(--main);
+  animation:blink 1s infinite;
+}
+
+.voice-item.done{
+  background:#ecfdf5;
+}
+
+@keyframes blink{
+  0%{opacity:1}
+  50%{opacity:0.35}
+  100%{opacity:1}
+}
+
+.recognition-box{
+  margin-top:18px;
+  padding:14px;
+  border-radius:14px;
+  background:#f8fafc;
+  border:1px solid var(--border);
+  min-height:80px;
+}
+
+.recognition-title{
+  font-weight:700;
+  margin-bottom:8px;
+}
+
+.voice-buttons{
+  display:flex;
+  flex-wrap:wrap;
+  gap:10px;
+  margin-top:18px;
+}
+
+.status{
+  margin-top:10px;
+  color:var(--muted);
+  line-height:1.7;
+}
+
+@media(max-width:640px){
+  .grid{
+    grid-template-columns:1fr;
+  }
+}
+</style>
 </head>
+
 <body>
-  <header>
+
+<div class="container">
+
+  <div class="card">
     <h1>体重管理アプリ</h1>
-    <button id="settingsBtn" class="primary">設定</button>
-  </header>
 
-  <main>
-    <section class="card">
-      <h2>接続設定</h2>
-      <div class="hint">
-        GitHub Pages版です。下の <code>GAS_API_URL</code> に、GASのWebアプリURLを設定して使います。<br>
-        例：<code>https://script.google.com/macros/s/xxxxxxxx/exec</code>
-      </div>
-      <div class="hint" id="apiStatus">保存先API：未確認</div>
-    </section>
+    <button id="openVoiceBtn" class="primary">
+      音声入力開始
+    </button>
 
-    <section class="card">
-      <h2>今日の記録</h2>
-      <div class="date-box">記録日：<strong id="todayLabel"></strong></div>
-
-      <div class="voice-simple-box">
-        <button id="openVoiceModalBtn" class="primary voice-main-btn" type="button">音声入力開始</button>
-        <div class="hint">音声入力は専用画面で1項目ずつ行います。</div>
-      </div>
-
-      <div class="section-title">基本項目</div>
-      <div class="grid" id="basicFields"></div>
-
-      <div class="section-title">詳細項目</div>
-      <div class="grid" id="detailFields"></div>
-
-      <div class="save-area">
-        <button id="cancelEditBtn" style="display:none;">修正キャンセル</button>
-        <button id="saveBtn" class="success" disabled>保存</button>
-      </div>
-      <div class="hint">※同じ日に保存した場合は、既存の記録を上書きします。</div>
-    </section>
-
-    <section class="card">
-      <h2>記録グラフ</h2>
-      <div class="buttons" id="periodButtons"></div>
-      <canvas id="chart" width="1200" height="430"></canvas>
-      <div class="buttons" id="metricButtons"></div>
-      <div class="hint">
-        初期表示は「過去1か月・全要素」です。全要素表示時のみ0〜100に自動スケーリングします。グラフをタップすると全画面表示します。
-      </div>
-    </section>
-  </main>
-
-
-  <div id="voiceModal" class="voice-modal">
-    <div class="voice-modal-panel">
-      <div class="voice-modal-title">音声入力</div>
-      <div class="hint">各項目を1つずつ聞き取ります。入力中の項目は点滅します。</div>
-
-      <div id="voiceList" class="voice-list"></div>
-
-      <div class="voice-recognition-box">
-        <strong>認識結果</strong>
-        <div id="voiceRecognitionText">音声入力を開始します...</div>
-      </div>
-
-      <div class="voice-modal-buttons">
-        <button id="voiceRetryBtn" type="button">やり直す</button>
-        <button id="voiceNextBtn" class="primary" type="button">次の項目へ</button>
-        <button id="voiceApplyBtn" class="success voice-hidden" type="button">一覧を反映</button>
-        <button id="voiceCancelBtn" type="button">入力キャンセル</button>
-      </div>
+    <div class="status">
+      音声入力で順番に各項目を登録できます。
     </div>
   </div>
 
-  <div id="settingsModal" class="modal">
-    <div class="modal-panel">
-      <div class="modal-head">
-        <h2>保存履歴</h2>
-        <button id="backBtn">戻る</button>
-      </div>
-      <div class="buttons">
-        <button id="editSelectedBtn" class="primary" disabled>選択した1件を修正</button>
-        <button id="deleteSelectedBtn" class="danger" disabled>選択した履歴を削除</button>
-      </div>
-      <div class="table-wrap">
-        <table class="history-table">
-          <thead>
-            <tr>
-              <th>選択</th>
-              <th>日付</th>
-              <th>体重</th>
-              <th>体脂肪率</th>
-              <th>内臓脂肪</th>
-              <th>基礎代謝</th>
-              <th>BMI</th>
-              <th>体年齢</th>
-              <th>皮下脂肪率</th>
-              <th>骨格筋率</th>
-              <th>腹囲</th>
-            </tr>
-          </thead>
-          <tbody id="historyBody"></tbody>
-        </table>
-      </div>
-    </div>
-  </div>
+  <div class="card">
+    <div class="grid">
 
-  <div id="fullScreen" class="fullscreen">
-    <div class="full-head">
-      <strong>全画面グラフ</strong>
       <div>
-        <button id="resetZoomBtn">ズームリセット</button>
-        <button id="closeFullBtn">閉じる</button>
+        <label>体重</label>
+        <input id="weight">
       </div>
+
+      <div>
+        <label>体脂肪率</label>
+        <input id="bodyFat">
+      </div>
+
+      <div>
+        <label>内臓脂肪レベル</label>
+        <input id="visceralFat">
+      </div>
+
+      <div>
+        <label>基礎代謝</label>
+        <input id="basalMetabolism">
+      </div>
+
+      <div>
+        <label>BMI</label>
+        <input id="bmi">
+      </div>
+
+      <div>
+        <label>体年齢</label>
+        <input id="bodyAge">
+      </div>
+
+      <div>
+        <label>全身皮下脂肪率</label>
+        <input id="subcutaneousFat">
+      </div>
+
+      <div>
+        <label>全身骨格筋率</label>
+        <input id="skeletalMuscle">
+      </div>
+
+      <div>
+        <label>腹囲</label>
+        <input id="waist">
+      </div>
+
     </div>
-    <canvas id="fullCanvas" width="1600" height="900"></canvas>
-    <div class="hint">ピンチズーム・横スクロール・データ点タップで数値表示に対応しています。</div>
   </div>
 
-  <div id="tooltip" class="tooltip"></div>
+</div>
 
-  <script>
-    const STORAGE_KEY = "body_weight_manager_records_v1";
+<div id="voiceModal" class="voice-modal hidden">
+  <div class="voice-modal-content">
 
-    // 【重要】ここを自分のGAS WebアプリURLに差し替えてください。
-    // 例: const GAS_API_URL = "https://script.google.com/macros/s/xxxxxxxxxxxxxxxx/exec";
-    const GAS_API_URL = "https://script.google.com/macros/s/AKfycbzmgFXgmXq6S_5IZAw85GgvrthHwx9Cv8M8gtOF4Vdnjj5AYGv6SN-lOP6X4naczrt4/exec";
+    <h2>音声入力</h2>
 
-    function isGasApiConfigured() {
-      return GAS_API_URL &&
-        GAS_API_URL.startsWith("https://script.google.com/macros/s/") &&
-        GAS_API_URL.includes("/exec");
+    <div id="voiceList" class="voice-list"></div>
+
+    <div class="recognition-box">
+      <div class="recognition-title">認識結果</div>
+      <div id="recognitionText"></div>
+    </div>
+
+    <div class="voice-buttons">
+      <button id="applyBtn" class="success hidden">
+        反映
+      </button>
+
+      <button id="cancelBtn" class="danger">
+        入力キャンセル
+      </button>
+    </div>
+
+  </div>
+</div>
+
+<script>
+const metrics = [
+  {key:"weight",label:"体重",unit:"kg",min:30,max:200},
+  {key:"bodyFat",label:"体脂肪率",unit:"%",min:3,max:50},
+  {key:"visceralFat",label:"内臓脂肪レベル",unit:"",min:1,max:30},
+  {key:"basalMetabolism",label:"基礎代謝",unit:"kcal",min:800,max:3000},
+  {key:"bmi",label:"BMI",unit:"",min:10,max:60},
+  {key:"bodyAge",label:"体年齢",unit:"歳",min:10,max:100},
+  {key:"subcutaneousFat",label:"全身皮下脂肪率",unit:"%",min:3,max:50},
+  {key:"skeletalMuscle",label:"全身骨格筋率",unit:"%",min:20,max:60},
+  {key:"waist",label:"腹囲",unit:"cm",min:50,max:200}
+];
+
+const values = {};
+let currentIndex = 0;
+let recognition = null;
+let listening = false;
+
+const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+
+function renderList(){
+  const list = document.getElementById("voiceList");
+  list.innerHTML = "";
+
+  metrics.forEach((m,index)=>{
+    const div = document.createElement("div");
+
+    div.className = "voice-item";
+
+    if(index === currentIndex && listening){
+      div.classList.add("active");
     }
 
-    function setApiStatus(message) {
-      const el = document.getElementById("apiStatus");
-      if (el) {
-        el.innerHTML = message;
-      }
+    if(values[m.key] !== undefined){
+      div.classList.add("done");
     }
 
-    function callGasApi(action, params = {}) {
-      return new Promise((resolve, reject) => {
-        if (!isGasApiConfigured()) {
-          reject(new Error("GAS_API_URLが未設定です。GitHub Pages用index.html内のGAS_API_URLをWebアプリURLに差し替えてください。"));
-          return;
-        }
+    div.innerHTML = values[m.key] !== undefined
+      ? `${m.label} ... ${values[m.key]}${m.unit}`
+      : index === currentIndex && listening
+      ? `${m.label} ... 音声入力中`
+      : m.label;
 
-        const callbackName = "__gasJsonpCallback_" + Date.now() + "_" + Math.floor(Math.random() * 100000);
-
-        const url = new URL(GAS_API_URL);
-        url.searchParams.set("api", "weight");
-        url.searchParams.set("action", action);
-        url.searchParams.set("callback", callbackName);
-
-        Object.keys(params).forEach(key => {
-          url.searchParams.set(key, params[key]);
-        });
-
-        const script = document.createElement("script");
-
-        const timer = setTimeout(() => {
-          cleanup();
-          reject(new Error("GAS APIの応答がタイムアウトしました。"));
-        }, 30000);
-
-        function cleanup() {
-          clearTimeout(timer);
-          delete window[callbackName];
-          if (script.parentNode) {
-            script.parentNode.removeChild(script);
-          }
-        }
-
-        window[callbackName] = response => {
-          cleanup();
-          resolve(response);
-        };
-
-        script.onerror = () => {
-          cleanup();
-          reject(new Error("GAS APIの読み込みに失敗しました。URLやデプロイ設定を確認してください。"));
-        };
-
-        script.src = url.toString();
-        document.body.appendChild(script);
-      });
-    }
-
-    const metrics = [
-      { key: "weight", name: "体重", unit: "kg", min: 30, max: 200, step: 0.1, decimals: 1, good: "min", group: "basic" },
-      { key: "bodyFat", name: "体脂肪率", unit: "%", min: 3, max: 50, step: 0.1, decimals: 1, good: "min", group: "basic" },
-      { key: "visceralFat", name: "内臓脂肪レベル", unit: "", min: 1, max: 30, step: 0.1, decimals: 1, good: "min", group: "basic" },
-      { key: "basalMetabolism", name: "基礎代謝", unit: "kcal", min: 800, max: 3000, step: 1, decimals: 0, good: "max", group: "basic", secondary: true },
-      { key: "bmi", name: "BMI", unit: "", min: 10, max: 60, step: 0.1, decimals: 1, good: "min", group: "basic" },
-      { key: "bodyAge", name: "体年齢", unit: "歳", min: 10, max: 100, step: 1, decimals: 0, good: "min", group: "basic" },
-      { key: "subcutaneousFat", name: "全身皮下脂肪率", unit: "%", min: 3, max: 50, step: 0.1, decimals: 1, good: "min", group: "detail" },
-      { key: "skeletalMuscle", name: "全身骨格筋率", unit: "%", min: 20, max: 50, step: 0.1, decimals: 1, good: "max", group: "detail" },
-      { key: "waist", name: "腹囲", unit: "cm", min: 50, max: 200, step: 0.1, decimals: 1, good: "min", group: "detail" }
-    ];
-
-    const periods = [
-      { key: "month", label: "過去1か月間" },
-      { key: "year", label: "過去1年間" },
-      { key: "thisYear", label: "今年（1月〜）" },
-      { key: "all", label: "全期間" }
-    ];
-
-    const colors = [
-      "#2563eb", "#dc2626", "#16a34a", "#9333ea", "#ea580c",
-      "#0891b2", "#be123c", "#4f46e5", "#65a30d"
-    ];
-
-    const voicePatterns = [
-      { key: "weight", labels: ["体重"], unitWords: ["キロ", "kg", "ＫＧ"] },
-      { key: "bodyFat", labels: ["体脂肪率", "体脂肪"], unitWords: ["パーセント", "%", "％"] },
-      { key: "visceralFat", labels: ["内臓脂肪レベル", "内臓脂肪"], unitWords: ["レベル"] },
-      { key: "basalMetabolism", labels: ["基礎代謝"], unitWords: ["キロカロリー", "カロリー", "kcal"] },
-      { key: "bmi", labels: ["BMI", "ビーエムアイ", "bmi"], unitWords: [] },
-      { key: "bodyAge", labels: ["体年齢", "身体年齢"], unitWords: ["歳", "才"] },
-      { key: "subcutaneousFat", labels: ["全身皮下脂肪率", "皮下脂肪率", "皮下脂肪"], unitWords: ["パーセント", "%", "％"] },
-      { key: "skeletalMuscle", labels: ["全身骨格筋率", "骨格筋率", "骨格筋"], unitWords: ["パーセント", "%", "％"] },
-      { key: "waist", labels: ["腹囲", "福井", "ふくい", "ウエスト", "ウェスト"], unitWords: ["センチ", "cm"] }
-    ];
-
-    const voiceAliasMap = {
-      "福井": "腹囲",
-      "ふくい": "腹囲",
-      "フクイ": "腹囲",
-      "ウエスト": "腹囲",
-      "ウェスト": "腹囲",
-      "内蔵脂肪": "内臓脂肪",
-      "内臓脂肪率": "内臓脂肪",
-      "基礎体謝": "基礎代謝",
-      "基礎大社": "基礎代謝",
-      "体年令": "体年齢",
-      "身体年齢": "体年齢",
-      "皮下脂肪": "皮下脂肪率",
-      "骨格金率": "骨格筋率",
-      "骨格金": "骨格筋率",
-      "骨格筋": "骨格筋率",
-      "ビーエムアイ": "BMI",
-      "ＢＭＩ": "BMI"
+    div.onclick = ()=>{
+      currentIndex = index;
+      startRecognition();
     };
 
-    const voiceStepOrder = [
-      "weight",
-      "bodyFat",
-      "visceralFat",
-      "basalMetabolism",
-      "bmi",
-      "bodyAge",
-      "subcutaneousFat",
-      "skeletalMuscle",
-      "waist"
-    ];
+    list.appendChild(div);
+  });
+}
 
-    let voiceModalActive = false;
-    let voiceStepIndex = 0;
-    let voiceValues = {};
-    let voiceCurrentValue = null;
-    let voiceRecognition = null;
-    let voiceIsListening = false;
-    let voiceLastRawText = "";
+function normalize(text){
+  return text
+    .replace(/福井/g,"腹囲")
+    .replace(/ない臓脂肪/g,"内臓脂肪")
+    .replace(/[０-９]/g,s=>String.fromCharCode(s.charCodeAt(0)-65248));
+}
 
-    let records = [];
-    let selectedPeriod = "month";
-    let selectedMetrics = ["all"];
-    let editingDate = null;
-    let fullZoom = 1;
-    let fullOffsetX = 0;
-    let pointerState = { dragging: false, lastX: 0, pinchDist: 0 };
-    let lastPlotPoints = [];
-    let lastFullPlotPoints = [];
+function extractNumber(text){
+  const m = text.match(/([0-9]+(?:\.[0-9]+)?)/);
+  return m ? Number(m[1]) : null;
+}
 
-    const today = new Date();
-    const todayStr = formatDate(today);
+function currentMetric(){
+  return metrics[currentIndex];
+}
 
-    document.getElementById("todayLabel").textContent = todayStr;
+function startRecognition(){
 
-    function formatDate(date) {
-      const y = date.getFullYear();
-      const m = String(date.getMonth() + 1).padStart(2, "0");
-      const d = String(date.getDate()).padStart(2, "0");
-      return `${y}-${m}-${d}`;
+  if(!SpeechRecognition){
+    alert("このブラウザは音声入力非対応です");
+    return;
+  }
+
+  if(recognition){
+    recognition.abort();
+  }
+
+  const metric = currentMetric();
+
+  recognition = new SpeechRecognition();
+  recognition.lang = "ja-JP";
+  recognition.continuous = false;
+  recognition.interimResults = false;
+
+  listening = true;
+
+  renderList();
+
+  document.getElementById("recognitionText").innerHTML =
+    `<strong>${metric.label}</strong> を音声入力中...`;
+
+  recognition.onresult = e => {
+
+    const transcript = normalize(e.results[0][0].transcript);
+
+    document.getElementById("recognitionText").innerHTML =
+      transcript;
+
+    const num = extractNumber(transcript);
+
+    if(num !== null &&
+       num >= metric.min &&
+       num <= metric.max){
+
+      values[metric.key] = num;
+
+      listening = false;
+
+      renderList();
+
+      moveNextAuto();
+
+    }else{
+
+      listening = false;
+
+      renderList();
+
+      document.getElementById("recognitionText").innerHTML =
+        `${metric.label} の数値を認識できませんでした。再度自動で聞き取ります。`;
+
+      setTimeout(()=>{
+        startRecognition();
+      },1200);
     }
+  };
 
-    function parseDate(str) {
-      const [y, m, d] = str.split("-").map(Number);
-      return new Date(y, m - 1, d);
+  recognition.onerror = () => {
+
+    listening = false;
+
+    renderList();
+
+    setTimeout(()=>{
+      startRecognition();
+    },1200);
+  };
+
+  recognition.onend = ()=>{
+    listening = false;
+    renderList();
+  };
+
+  recognition.start();
+}
+
+function moveNextAuto(){
+
+  const nextIndex = metrics.findIndex(m => values[m.key] === undefined);
+
+  if(nextIndex === -1){
+
+    currentIndex = metrics.length - 1;
+
+    renderList();
+
+    document.getElementById("recognitionText").innerHTML =
+      "全項目の入力が完了しました。";
+
+    document.getElementById("applyBtn").classList.remove("hidden");
+
+    return;
+  }
+
+  currentIndex = nextIndex;
+
+  renderList();
+
+  setTimeout(()=>{
+    startRecognition();
+  },900);
+}
+
+function openModal(){
+
+  document.getElementById("voiceModal")
+    .classList.remove("hidden");
+
+  document.getElementById("applyBtn")
+    .classList.add("hidden");
+
+  currentIndex = 0;
+
+  renderList();
+
+  startRecognition();
+}
+
+function applyValues(){
+
+  metrics.forEach(m=>{
+
+    if(values[m.key] !== undefined){
+
+      document.getElementById(m.key).value =
+        values[m.key];
     }
+  });
 
-    function buildInputs() {
-      const basic = document.getElementById("basicFields");
-      const detail = document.getElementById("detailFields");
-      basic.innerHTML = "";
-      detail.innerHTML = "";
+  closeModal();
+}
 
-      metrics.forEach(metric => {
-        const wrap = document.createElement("div");
-        wrap.innerHTML = `
-          <label for="${metric.key}">${metric.name}</label>
-          <div class="field">
-            <input id="${metric.key}" type="number" inputmode="decimal"
-              min="${metric.min}" max="${metric.max}" step="${metric.step}"
-              placeholder="${metric.min}〜${metric.max}">
-            <span class="unit">${metric.unit}</span>
-          </div>
-        `;
-        (metric.group === "basic" ? basic : detail).appendChild(wrap);
-        wrap.querySelector("input").addEventListener("input", validateForm);
-        wrap.querySelector("input").addEventListener("blur", () => normalizeInput(metric));
-      });
-    }
+function closeModal(){
 
-    function buildButtons() {
-      const periodBox = document.getElementById("periodButtons");
-      periodBox.innerHTML = "";
-      periods.forEach(p => {
-        const btn = document.createElement("button");
-        btn.textContent = p.label;
-        btn.className = selectedPeriod === p.key ? "active" : "";
-        btn.onclick = () => {
-          selectedPeriod = p.key;
-          buildButtons();
-          drawMainChart();
-        };
-        periodBox.appendChild(btn);
-      });
+  if(recognition){
+    recognition.abort();
+  }
 
-      const metricBox = document.getElementById("metricButtons");
-      metricBox.innerHTML = "";
+  listening = false;
 
-      const allBtn = document.createElement("button");
-      allBtn.textContent = "全要素";
-      allBtn.className = selectedMetrics.includes("all") ? "active" : "";
-      allBtn.onclick = () => {
-        selectedMetrics = ["all"];
-        buildButtons();
-        drawMainChart();
-      };
-      metricBox.appendChild(allBtn);
+  document.getElementById("voiceModal")
+    .classList.add("hidden");
+}
 
-      metrics.forEach(metric => {
-        const btn = document.createElement("button");
-        btn.textContent = metric.name;
-        btn.className = selectedMetrics.includes(metric.key) ? "active" : "";
-        btn.onclick = () => {
-          selectedMetrics = selectedMetrics.filter(k => k !== "all");
-          if (selectedMetrics.includes(metric.key)) {
-            selectedMetrics = selectedMetrics.filter(k => k !== metric.key);
-          } else {
-            selectedMetrics.push(metric.key);
-          }
-          if (selectedMetrics.length === 0) selectedMetrics = ["all"];
-          buildButtons();
-          drawMainChart();
-        };
-        metricBox.appendChild(btn);
-      });
-    }
+document.getElementById("openVoiceBtn")
+  .onclick = openModal;
 
-    function normalizeInput(metric) {
-      const input = document.getElementById(metric.key);
-      if (input.value === "") return;
-      const num = Number(input.value);
-      if (!Number.isFinite(num)) return;
-      input.value = metric.decimals === 0 ? String(Math.round(num)) : num.toFixed(metric.decimals);
-      validateForm();
-    }
+document.getElementById("applyBtn")
+  .onclick = applyValues;
 
-    function validateForm() {
-      let ok = true;
-      for (const metric of metrics) {
-        const input = document.getElementById(metric.key);
-        const value = Number(input.value);
-        if (input.value === "" || !Number.isFinite(value) || value < metric.min || value > metric.max) {
-          ok = false;
-          break;
-        }
-      }
-      document.getElementById("saveBtn").disabled = !ok;
-    }
+document.getElementById("cancelBtn")
+  .onclick = closeModal;
+</script>
 
-    function setAppStatus(message) {
-      const voiceResult = document.getElementById("voiceResult");
-      if (voiceResult && message) {
-        voiceResult.innerHTML = message;
-      }
-    }
-
-    async function loadRecords() {
-      if (!isGasApiConfigured()) {
-        setApiStatus("保存先API：<strong style='color:#dc2626;'>未設定</strong>");
-        setAppStatus("GAS_API_URLが未設定です。index.html内のGAS_API_URLをGAS WebアプリURLに差し替えてください。");
-        records = [];
-        renderHistory();
-        drawMainChart();
-        return;
-      }
-
-      try {
-        setApiStatus("保存先API：接続確認中...");
-        setAppStatus("保存データを読み込み中です...");
-
-        const response = await callGasApi("list");
-
-        if (!response || !response.ok) {
-          throw new Error(response && response.message ? response.message : "不明なエラー");
-        }
-
-        records = Array.isArray(response.records) ? response.records : [];
-        records.sort((a, b) => a.date.localeCompare(b.date));
-
-        setApiStatus("保存先API：<strong style='color:#16a34a;'>接続OK</strong>");
-        setAppStatus("例：「体重 72.5キロ、体脂肪率 18.4パーセント、腹囲 84センチ」");
-
-      } catch (err) {
-        setApiStatus("保存先API：<strong style='color:#dc2626;'>接続エラー</strong>");
-        setAppStatus("読み込みに失敗しました：" + (err && err.message ? err.message : err));
-        records = [];
-      }
-
-      renderHistory();
-      drawMainChart();
-    }
-
-    function saveRecords() {
-      // GitHub Pages版ではGAS API側に保存するため、localStorage保存は使いません。
-    }
-
-    function getFormRecord() {
-      const record = { date: editingDate || todayStr };
-      metrics.forEach(metric => {
-        const raw = Number(document.getElementById(metric.key).value);
-        record[metric.key] = metric.decimals === 0 ? Math.round(raw) : Number(raw.toFixed(metric.decimals));
-      });
-      return record;
-    }
-
-    function setFormRecord(record) {
-      metrics.forEach(metric => {
-        document.getElementById(metric.key).value = record[metric.key];
-      });
-      editingDate = record.date;
-      document.getElementById("todayLabel").textContent = record.date + "（修正中）";
-      document.getElementById("cancelEditBtn").style.display = "inline-block";
-      validateForm();
-      window.scrollTo({ top: 0, behavior: "smooth" });
-    }
-
-    function clearForm() {
-      metrics.forEach(metric => document.getElementById(metric.key).value = "");
-      editingDate = null;
-      document.getElementById("todayLabel").textContent = todayStr;
-      document.getElementById("cancelEditBtn").style.display = "none";
-      validateForm();
-    }
-
-    function saveForm() {
-      metrics.forEach(normalizeInput);
-      validateForm();
-      if (document.getElementById("saveBtn").disabled) return;
-
-      const saveBtn = document.getElementById("saveBtn");
-      saveBtn.disabled = true;
-      saveBtn.textContent = "保存中...";
-
-      const newRecord = getFormRecord();
-      const oldRecords = records.filter(r => r.date !== newRecord.date);
-      const alerts = buildRecordAlerts(newRecord, oldRecords);
-
-      const applySavedRecords = updatedRecords => {
-        records = Array.isArray(updatedRecords) ? updatedRecords : records;
-        records.sort((a, b) => a.date.localeCompare(b.date));
-        clearForm();
-        drawMainChart();
-        renderHistory();
-        saveBtn.textContent = "保存";
-        validateForm();
-
-        if (alerts.length > 0) {
-          alert(alerts.join("\n"));
-        } else {
-          alert("保存しました。");
-        }
-      };
-
-      if (isGasApiConfigured()) {
-        callGasApi("save", {
-          payload: JSON.stringify(newRecord)
-        })
-          .then(response => {
-            if (!response || !response.ok) {
-              alert("保存に失敗しました：" + (response && response.message ? response.message : "不明なエラー"));
-              saveBtn.textContent = "保存";
-              validateForm();
-              return;
-            }
-            applySavedRecords(response.records);
-          })
-          .catch(err => {
-            alert("保存に失敗しました：" + (err && err.message ? err.message : err));
-            saveBtn.textContent = "保存";
-            validateForm();
-          });
-        return;
-      }
-
-      const index = records.findIndex(r => r.date === newRecord.date);
-      if (index >= 0) records[index] = newRecord;
-      else records.push(newRecord);
-
-      records.sort((a, b) => a.date.localeCompare(b.date));
-      saveRecords();
-      applySavedRecords(records);
-    }
-
-    function getPeriodStart(periodKey, baseDate = new Date()) {
-      const d = new Date(baseDate);
-      if (periodKey === "month") {
-        d.setMonth(d.getMonth() - 1);
-        return d;
-      }
-      if (periodKey === "year") {
-        d.setFullYear(d.getFullYear() - 1);
-        return d;
-      }
-      if (periodKey === "thisYear") {
-        return new Date(d.getFullYear(), 0, 1);
-      }
-      return null;
-    }
-
-    function filterByPeriod(source, periodKey) {
-      if (periodKey === "all") return [...source];
-      const start = getPeriodStart(periodKey, today);
-      return source.filter(r => parseDate(r.date) >= start);
-    }
-
-    function buildRecordAlerts(newRecord, comparisonRecords) {
-      const messages = [];
-      const periodLabels = {
-        all: "全期間",
-        year: "過去1年間",
-        thisYear: "今年（1月〜）",
-        month: "過去1か月間"
-      };
-
-      metrics.forEach(metric => {
-        ["all", "year", "thisYear", "month"].forEach(periodKey => {
-          const source = filterByPeriod(comparisonRecords, periodKey);
-          const values = source.map(r => r[metric.key]).filter(v => Number.isFinite(v));
-          const newValue = newRecord[metric.key];
-
-          if (values.length === 0) {
-            messages.push(`「${metric.name}」が「${periodLabels[periodKey]}」で初回記録です。`);
-            return;
-          }
-
-          const min = Math.min(...values);
-          const max = Math.max(...values);
-
-          if (metric.good === "min") {
-            if (newValue < min) {
-              messages.push(`「${metric.name}」が「${periodLabels[periodKey]}」で最小値を記録しました。おめでとうございます！今後も継続しましょう！！`);
-            } else if (newValue > max) {
-              messages.push(`「${metric.name}」が「${periodLabels[periodKey]}」で最大値を記録しました。より一層肉体改造に励みましょう！！`);
-            }
-          } else {
-            if (newValue > max) {
-              messages.push(`「${metric.name}」が「${periodLabels[periodKey]}」で最大値を記録しました。おめでとうございます！今後も継続しましょう！！`);
-            } else if (newValue < min) {
-              messages.push(`「${metric.name}」が「${periodLabels[periodKey]}」で最小値を記録しました。より一層肉体改造に励みましょう！！`);
-            }
-          }
-        });
-      });
-
-      return messages;
-    }
-
-    function getSelectedMetricObjects() {
-      if (selectedMetrics.includes("all")) return metrics;
-      return metrics.filter(m => selectedMetrics.includes(m.key));
-    }
-
-    function drawMainChart() {
-      const canvas = document.getElementById("chart");
-      lastPlotPoints = drawChart(canvas, { fullscreen: false, zoom: 1, offsetX: 0 });
-    }
-
-    function drawFullChart() {
-      const canvas = document.getElementById("fullCanvas");
-      lastFullPlotPoints = drawChart(canvas, { fullscreen: true, zoom: fullZoom, offsetX: fullOffsetX });
-    }
-
-    function drawChart(canvas, options) {
-      const ctx = canvas.getContext("2d");
-      const dpr = window.devicePixelRatio || 1;
-      const rect = canvas.getBoundingClientRect();
-      const cssWidth = rect.width || canvas.width;
-      const cssHeight = rect.height || canvas.height;
-
-      canvas.width = Math.floor(cssWidth * dpr);
-      canvas.height = Math.floor(cssHeight * dpr);
-      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-
-      ctx.clearRect(0, 0, cssWidth, cssHeight);
-
-      const data = filterByPeriod(records, selectedPeriod);
-      const selected = getSelectedMetricObjects();
-      const isAll = selectedMetrics.includes("all");
-      const plotPoints = [];
-
-      const margin = {
-        left: 52,
-        right: selected.some(m => m.secondary) && !isAll ? 58 : 20,
-        top: 24,
-        bottom: 48
-      };
-
-      const innerW = cssWidth - margin.left - margin.right;
-      const innerH = cssHeight - margin.top - margin.bottom;
-
-      ctx.fillStyle = "#ffffff";
-      ctx.fillRect(0, 0, cssWidth, cssHeight);
-
-      ctx.strokeStyle = "#e5e7eb";
-      ctx.lineWidth = 1;
-      ctx.fillStyle = "#6b7280";
-      ctx.font = "12px sans-serif";
-
-      for (let i = 0; i <= 5; i++) {
-        const y = margin.top + innerH * i / 5;
-        ctx.beginPath();
-        ctx.moveTo(margin.left, y);
-        ctx.lineTo(cssWidth - margin.right, y);
-        ctx.stroke();
-      }
-
-      if (data.length === 0) {
-        ctx.fillStyle = "#6b7280";
-        ctx.font = "16px sans-serif";
-        ctx.textAlign = "center";
-        ctx.fillText("保存データがありません", cssWidth / 2, cssHeight / 2);
-        return plotPoints;
-      }
-
-      if (data.length === 1) {
-        ctx.fillStyle = "#6b7280";
-        ctx.textAlign = "center";
-        ctx.fillText("データが1件です。点で表示します。", cssWidth / 2, 22);
-      }
-
-      const primaryMetrics = selected.filter(m => !(m.secondary && !isAll));
-      const secondaryMetrics = selected.filter(m => m.secondary && !isAll);
-
-      function getRange(metricList, scaled) {
-        if (scaled) return { min: 0, max: 100 };
-        const values = [];
-        data.forEach(r => metricList.forEach(m => values.push(r[m.key])));
-        let min = Math.min(...values);
-        let max = Math.max(...values);
-        if (min === max) {
-          min -= 1;
-          max += 1;
-        }
-        const pad = (max - min) * 0.1;
-        return { min: min - pad, max: max + pad };
-      }
-
-      const primaryRange = getRange(primaryMetrics.length ? primaryMetrics : selected, isAll);
-      const secondaryRange = secondaryMetrics.length ? getRange(secondaryMetrics, false) : null;
-
-      function yFor(value, range) {
-        return margin.top + innerH - ((value - range.min) / (range.max - range.min)) * innerH;
-      }
-
-      function xFor(index) {
-        if (data.length === 1) return margin.left + innerW / 2;
-        const totalW = innerW * (options.zoom || 1);
-        const base = margin.left - (options.offsetX || 0);
-        return base + totalW * index / (data.length - 1);
-      }
-
-      ctx.fillStyle = "#6b7280";
-      ctx.textAlign = "right";
-      for (let i = 0; i <= 5; i++) {
-        const value = primaryRange.max - (primaryRange.max - primaryRange.min) * i / 5;
-        const y = margin.top + innerH * i / 5;
-        ctx.fillText(isAll ? Math.round(value) : formatAxis(value), margin.left - 8, y + 4);
-      }
-
-      if (secondaryRange) {
-        ctx.textAlign = "left";
-        for (let i = 0; i <= 5; i++) {
-          const value = secondaryRange.max - (secondaryRange.max - secondaryRange.min) * i / 5;
-          const y = margin.top + innerH * i / 5;
-          ctx.fillText(formatAxis(value), cssWidth - margin.right + 8, y + 4);
-        }
-      }
-
-      ctx.strokeStyle = "#9ca3af";
-      ctx.beginPath();
-      ctx.moveTo(margin.left, margin.top);
-      ctx.lineTo(margin.left, margin.top + innerH);
-      ctx.lineTo(cssWidth - margin.right, margin.top + innerH);
-      ctx.stroke();
-
-      if (secondaryRange) {
-        ctx.beginPath();
-        ctx.moveTo(cssWidth - margin.right, margin.top);
-        ctx.lineTo(cssWidth - margin.right, margin.top + innerH);
-        ctx.stroke();
-      }
-
-      ctx.save();
-      ctx.beginPath();
-      ctx.rect(margin.left, margin.top, innerW, innerH);
-      ctx.clip();
-
-      selected.forEach((metric, mIndex) => {
-        const color = colors[metrics.findIndex(x => x.key === metric.key) % colors.length];
-        const range = metric.secondary && !isAll ? secondaryRange : primaryRange;
-
-        const values = data.map(r => r[metric.key]);
-        let min = Math.min(...values);
-        let max = Math.max(...values);
-
-        ctx.strokeStyle = color;
-        ctx.lineWidth = 2.5;
-        ctx.beginPath();
-
-        data.forEach((record, i) => {
-          let value = record[metric.key];
-          let displayValue = value;
-
-          if (isAll) {
-            value = max === min ? 50 : ((value - min) / (max - min)) * 100;
-          }
-
-          const x = xFor(i);
-          const y = yFor(value, range);
-
-          if (i === 0) ctx.moveTo(x, y);
-          else ctx.lineTo(x, y);
-
-          plotPoints.push({
-            x, y,
-            date: record.date,
-            metric: metric.name,
-            value: displayValue,
-            unit: metric.unit,
-            color
-          });
-        });
-        ctx.stroke();
-
-        data.forEach((record, i) => {
-          let value = record[metric.key];
-          let displayValue = value;
-          if (isAll) value = max === min ? 50 : ((value - min) / (max - min)) * 100;
-          const x = xFor(i);
-          const y = yFor(value, range);
-          if (x < margin.left - 8 || x > cssWidth - margin.right + 8) return;
-          ctx.fillStyle = color;
-          ctx.beginPath();
-          ctx.arc(x, y, 3.5, 0, Math.PI * 2);
-          ctx.fill();
-        });
-      });
-
-      ctx.restore();
-
-      ctx.fillStyle = "#6b7280";
-      ctx.textAlign = "center";
-      const labelStep = Math.max(1, Math.ceil(data.length / 5));
-      data.forEach((r, i) => {
-        if (i % labelStep !== 0 && i !== data.length - 1) return;
-        const x = xFor(i);
-        if (x < margin.left || x > cssWidth - margin.right) return;
-        ctx.fillText(r.date.slice(5), x, cssHeight - 18);
-      });
-
-      ctx.textAlign = "left";
-      let legendX = margin.left;
-      let legendY = 16;
-      selected.forEach((metric) => {
-        const color = colors[metrics.findIndex(x => x.key === metric.key) % colors.length];
-        ctx.fillStyle = color;
-        ctx.fillRect(legendX, legendY - 8, 10, 10);
-        ctx.fillStyle = "#374151";
-        ctx.fillText(metric.name, legendX + 14, legendY);
-        legendX += metric.name.length * 13 + 42;
-        if (legendX > cssWidth - 140) {
-          legendX = margin.left;
-          legendY += 16;
-        }
-      });
-
-      if (isAll) {
-        ctx.fillStyle = "#6b7280";
-        ctx.textAlign = "right";
-        ctx.fillText("全要素：0〜100自動スケーリング", cssWidth - 16, cssHeight - 18);
-      }
-
-      return plotPoints;
-    }
-
-    function formatAxis(v) {
-      if (Math.abs(v) >= 100) return Math.round(v).toString();
-      return v.toFixed(1);
-    }
-
-    function showTooltip(x, y, points, clientX = x, clientY = y) {
-      const tooltip = document.getElementById("tooltip");
-      if (!points || points.length === 0) return;
-
-      let nearest = null;
-      let minDist = Infinity;
-
-      points.forEach(p => {
-        const dist = Math.hypot(p.x - x, p.y - y);
-        if (dist < minDist) {
-          minDist = dist;
-          nearest = p;
-        }
-      });
-
-      if (!nearest || minDist > 28) {
-        tooltip.style.display = "none";
-        return;
-      }
-
-      tooltip.innerHTML = `${nearest.date}<br>${nearest.metric}：${nearest.value}${nearest.unit}`;
-      tooltip.style.left = Math.min(window.innerWidth - 270, Math.max(8, clientX + 12)) + "px";
-      tooltip.style.top = Math.max(8, clientY + 12) + "px";
-      tooltip.style.display = "block";
-
-      setTimeout(() => {
-        tooltip.style.display = "none";
-      }, 2500);
-    }
-
-    function renderHistory() {
-      const tbody = document.getElementById("historyBody");
-      tbody.innerHTML = "";
-      [...records].reverse().forEach(record => {
-        const tr = document.createElement("tr");
-        tr.innerHTML = `
-          <td><input type="checkbox" class="historyCheck" value="${record.date}"></td>
-          <td>${record.date}</td>
-          ${metrics.map(m => `<td>${record[m.key]}${m.unit}</td>`).join("")}
-        `;
-        tbody.appendChild(tr);
-      });
-
-      document.querySelectorAll(".historyCheck").forEach(chk => {
-        chk.addEventListener("change", updateHistoryButtons);
-      });
-      updateHistoryButtons();
-    }
-
-    function selectedHistoryDates() {
-      return Array.from(document.querySelectorAll(".historyCheck:checked")).map(el => el.value);
-    }
-
-    function updateHistoryButtons() {
-      const selected = selectedHistoryDates();
-      document.getElementById("editSelectedBtn").disabled = selected.length !== 1;
-      document.getElementById("deleteSelectedBtn").disabled = selected.length === 0;
-    }
-
-    function openSettings() {
-      renderHistory();
-      document.getElementById("settingsModal").classList.add("show");
-    }
-
-    function closeSettings() {
-      document.getElementById("settingsModal").classList.remove("show");
-    }
-
-    function editSelected() {
-      const selected = selectedHistoryDates();
-      if (selected.length !== 1) return;
-      const record = records.find(r => r.date === selected[0]);
-      if (!record) return;
-      closeSettings();
-      setFormRecord(record);
-    }
-
-    function deleteSelected() {
-      const selected = selectedHistoryDates();
-      if (selected.length === 0) return;
-      if (!confirm(`${selected.length}件の履歴を削除しますか？`)) return;
-
-      const deleteBtn = document.getElementById("deleteSelectedBtn");
-      deleteBtn.disabled = true;
-      deleteBtn.textContent = "削除中...";
-
-      const applyDeletedRecords = updatedRecords => {
-        records = Array.isArray(updatedRecords) ? updatedRecords : records.filter(r => !selected.includes(r.date));
-        records.sort((a, b) => a.date.localeCompare(b.date));
-        renderHistory();
-        drawMainChart();
-        deleteBtn.textContent = "選択した履歴を削除";
-        updateHistoryButtons();
-      };
-
-      if (isGasApiConfigured()) {
-        callGasApi("delete", {
-          dates: selected.join(",")
-        })
-          .then(response => {
-            if (!response || !response.ok) {
-              alert("削除に失敗しました：" + (response && response.message ? response.message : "不明なエラー"));
-              deleteBtn.textContent = "選択した履歴を削除";
-              updateHistoryButtons();
-              return;
-            }
-            applyDeletedRecords(response.records);
-          })
-          .catch(err => {
-            alert("削除に失敗しました：" + (err && err.message ? err.message : err));
-            deleteBtn.textContent = "選択した履歴を削除";
-            updateHistoryButtons();
-          });
-        return;
-      }
-
-      records = records.filter(r => !selected.includes(r.date));
-      saveRecords();
-      applyDeletedRecords(records);
-    }
-
-    function openFullScreen() {
-      fullZoom = 1;
-      fullOffsetX = 0;
-      document.getElementById("fullScreen").classList.add("show");
-      setTimeout(drawFullChart, 50);
-    }
-
-    function closeFullScreen() {
-      document.getElementById("fullScreen").classList.remove("show");
-      document.getElementById("tooltip").style.display = "none";
-    }
-
-    function setupFullCanvasEvents() {
-      const canvas = document.getElementById("fullCanvas");
-
-      canvas.addEventListener("pointerdown", e => {
-        pointerState.dragging = true;
-        pointerState.lastX = e.clientX;
-        canvas.setPointerCapture(e.pointerId);
-      });
-
-      canvas.addEventListener("pointermove", e => {
-        if (!pointerState.dragging) return;
-        const dx = e.clientX - pointerState.lastX;
-        pointerState.lastX = e.clientX;
-        fullOffsetX = Math.max(0, fullOffsetX - dx);
-        drawFullChart();
-      });
-
-      canvas.addEventListener("pointerup", e => {
-        pointerState.dragging = false;
-      });
-
-      canvas.addEventListener("wheel", e => {
-        e.preventDefault();
-        const oldZoom = fullZoom;
-        fullZoom = Math.min(8, Math.max(1, fullZoom + (e.deltaY < 0 ? 0.2 : -0.2)));
-        if (fullZoom !== oldZoom) drawFullChart();
-      }, { passive: false });
-
-      canvas.addEventListener("touchstart", e => {
-        if (e.touches.length === 2) {
-          pointerState.pinchDist = Math.hypot(
-            e.touches[0].clientX - e.touches[1].clientX,
-            e.touches[0].clientY - e.touches[1].clientY
-          );
-        }
-      }, { passive: false });
-
-      canvas.addEventListener("touchmove", e => {
-        if (e.touches.length === 2) {
-          e.preventDefault();
-          const dist = Math.hypot(
-            e.touches[0].clientX - e.touches[1].clientX,
-            e.touches[0].clientY - e.touches[1].clientY
-          );
-          if (pointerState.pinchDist > 0) {
-            const diff = dist - pointerState.pinchDist;
-            fullZoom = Math.min(8, Math.max(1, fullZoom + diff / 220));
-            drawFullChart();
-          }
-          pointerState.pinchDist = dist;
-        }
-      }, { passive: false });
-
-      canvas.addEventListener("click", e => {
-        const rect = canvas.getBoundingClientRect();
-        showTooltip(e.clientX - rect.left, e.clientY - rect.top, lastFullPlotPoints, e.clientX, e.clientY);
-      });
-    }
-
-    function seedSampleIfEmpty() {
-      if (records.length > 0) return;
-      // 初期状態は空。必要なら開発時だけサンプルを入れる。
-    }
-
-
-    function normalizeVoiceText(text) {
-      let normalized = String(text || "")
-        .replace(/[０-９]/g, ch => String.fromCharCode(ch.charCodeAt(0) - 0xFEE0))
-        .replace(/[．。]/g, ".")
-        .replace(/[、，]/g, " ")
-        .replace(/\s+/g, " ")
-        .trim();
-
-      Object.keys(voiceAliasMap).forEach(from => {
-        normalized = normalized.replaceAll(from, voiceAliasMap[from]);
-      });
-
-      return normalized;
-    }
-
-    function escapeRegExp(str) {
-      return str.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-    }
-
-    function getMetricByKey(key) {
-      return metrics.find(m => m.key === key);
-    }
-
-    function parseVoiceValueForCurrentStep(rawText) {
-      const key = voiceStepOrder[voiceStepIndex];
-      const metric = getMetricByKey(key);
-      const pattern = voicePatterns.find(p => p.key === key);
-      const text = normalizeVoiceText(rawText);
-      const candidates = [];
-
-      if (!metric || !pattern) {
-        return { ok: false, value: null, text, message: "対象項目が見つかりません。" };
-      }
-
-      for (const label of pattern.labels) {
-        const normalizedLabel = normalizeVoiceText(label);
-        const unitPart = pattern.unitWords.length
-          ? `(?:${pattern.unitWords.map(escapeRegExp).join("|")})?`
-          : "";
-        const regex = new RegExp(`${escapeRegExp(normalizedLabel)}\\s*(?:は|が|を|：|:)?\\s*([0-9]+(?:\\.[0-9]+)?)\\s*${unitPart}`, "gi");
-        [...text.matchAll(regex)].forEach(match => candidates.push(Number(match[1])));
-      }
-
-      if (candidates.length === 0) {
-        [...text.matchAll(/([0-9]+(?:\.[0-9]+)?)/g)].forEach(match => candidates.push(Number(match[1])));
-      }
-
-      if (candidates.length === 0) {
-        return { ok: false, value: null, text, message: "数値を認識できませんでした。" };
-      }
-
-      const foundValue = candidates[candidates.length - 1];
-
-      if (!Number.isFinite(foundValue) || foundValue < metric.min || foundValue > metric.max) {
-        return {
-          ok: false,
-          value: null,
-          text,
-          message: `${metric.name}の入力範囲外です（${metric.min}〜${metric.max}${metric.unit}）。認識値：${foundValue}`
-        };
-      }
-
-      const normalizedValue = metric.decimals === 0
-        ? String(Math.round(foundValue))
-        : foundValue.toFixed(metric.decimals);
-
-      return {
-        ok: true,
-        value: normalizedValue,
-        text,
-        message: `${metric.name}：${normalizedValue}${metric.unit}`
-      };
-    }
-
-    function renderVoiceList() {
-      const list = document.getElementById("voiceList");
-      if (!list) return;
-
-      list.innerHTML = "";
-
-      voiceStepOrder.forEach((key, index) => {
-        const metric = getMetricByKey(key);
-        const row = document.createElement("div");
-        const name = document.createElement("div");
-        const value = document.createElement("div");
-
-        row.className = "voice-row";
-        name.textContent = metric.name;
-        value.className = "voice-value";
-
-        if (voiceValues[key] !== undefined && voiceValues[key] !== null && voiceValues[key] !== "") {
-          row.classList.add("done");
-          value.textContent = `${voiceValues[key]}${metric.unit}`;
-        } else if (index === voiceStepIndex && voiceIsListening) {
-          row.classList.add("active", "voice-blink");
-          value.textContent = "音声入力中";
-        } else if (index === voiceStepIndex && voiceCurrentValue !== null) {
-          row.classList.add("active");
-          value.textContent = `${voiceCurrentValue}${metric.unit}`;
-        } else {
-          value.textContent = "";
-        }
-
-        row.appendChild(name);
-        row.appendChild(value);
-        list.appendChild(row);
-      });
-    }
-
-    function updateVoiceButtons(mode) {
-      const retryBtn = document.getElementById("voiceRetryBtn");
-      const nextBtn = document.getElementById("voiceNextBtn");
-      const applyBtn = document.getElementById("voiceApplyBtn");
-
-      if (mode === "listening") {
-        retryBtn.classList.add("voice-hidden");
-        nextBtn.classList.add("voice-hidden");
-        applyBtn.classList.add("voice-hidden");
-      } else if (mode === "recognized") {
-        const nextMetric = getMetricByKey(voiceStepOrder[voiceStepIndex + 1]);
-        retryBtn.classList.remove("voice-hidden");
-        nextBtn.classList.remove("voice-hidden");
-        applyBtn.classList.add("voice-hidden");
-        nextBtn.textContent = nextMetric ? `次の項目（${nextMetric.name}）へ` : "一覧へ";
-      } else if (mode === "complete") {
-        retryBtn.classList.add("voice-hidden");
-        nextBtn.classList.add("voice-hidden");
-        applyBtn.classList.remove("voice-hidden");
-      }
-    }
-
-    function openVoiceModal() {
-      const modal = document.getElementById("voiceModal");
-      voiceModalActive = true;
-      voiceStepIndex = 0;
-      voiceValues = {};
-      voiceCurrentValue = null;
-      voiceLastRawText = "";
-      modal.classList.add("show");
-      startVoiceStep();
-    }
-
-    function closeVoiceModal() {
-      voiceModalActive = false;
-      if (voiceRecognition && voiceIsListening) {
-        try { voiceRecognition.abort(); } catch (e) {}
-      }
-      voiceIsListening = false;
-      voiceCurrentValue = null;
-      document.getElementById("voiceModal").classList.remove("show");
-    }
-
-    function startVoiceStep() {
-      const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-      const metric = getMetricByKey(voiceStepOrder[voiceStepIndex]);
-      const resultBox = document.getElementById("voiceRecognitionText");
-
-      if (!SpeechRecognition) {
-        resultBox.innerHTML = "このブラウザでは音声入力に対応していません。Chromeでお試しください。";
-        return;
-      }
-
-      if (!metric) return;
-
-      voiceCurrentValue = null;
-      voiceLastRawText = "";
-      voiceIsListening = true;
-      resultBox.innerHTML = `<strong>${metric.name}</strong> を話してください。`;
-      updateVoiceButtons("listening");
-      renderVoiceList();
-
-      try {
-        if (voiceRecognition) {
-          try { voiceRecognition.abort(); } catch (e) {}
-        }
-
-        voiceRecognition = new SpeechRecognition();
-        voiceRecognition.lang = "ja-JP";
-        voiceRecognition.interimResults = true;
-        voiceRecognition.continuous = false;
-        voiceRecognition.maxAlternatives = 1;
-
-        let finalText = "";
-        let interimText = "";
-
-        voiceRecognition.onresult = event => {
-          for (let i = event.resultIndex; i < event.results.length; i++) {
-            const transcript = event.results[i][0].transcript.trim();
-            if (!transcript) continue;
-            if (event.results[i].isFinal) finalText = transcript;
-            else interimText = transcript;
-          }
-
-          const displayText = finalText || interimText || "...";
-          resultBox.innerHTML = `<strong>認識中：</strong>${displayText}`;
-        };
-
-        voiceRecognition.onerror = event => {
-          voiceIsListening = false;
-          renderVoiceList();
-          updateVoiceButtons("recognized");
-          resultBox.innerHTML = `音声入力でエラーが発生しました：${event.error}<br>「やり直す」を押してください。`;
-        };
-
-        voiceRecognition.onend = () => {
-          if (!voiceModalActive) return;
-
-          voiceIsListening = false;
-          voiceLastRawText = (finalText || interimText || "").trim();
-
-          if (!voiceLastRawText) {
-            renderVoiceList();
-            updateVoiceButtons("recognized");
-            resultBox.innerHTML = "音声を認識できませんでした。「やり直す」を押してください。";
-            return;
-          }
-
-          const parsed = parseVoiceValueForCurrentStep(voiceLastRawText);
-
-          if (parsed.ok) {
-            voiceCurrentValue = parsed.value;
-            resultBox.innerHTML = `<strong>認識結果：</strong>${parsed.message}<br><span style="color:#6b7280;">認識文章：${parsed.text}</span>`;
-          } else {
-            voiceCurrentValue = null;
-            resultBox.innerHTML = `<strong>認識結果：</strong>${parsed.message}<br><span style="color:#6b7280;">認識文章：${parsed.text}</span>`;
-          }
-
-          renderVoiceList();
-          updateVoiceButtons("recognized");
-        };
-
-        voiceRecognition.start();
-      } catch (e) {
-        voiceIsListening = false;
-        renderVoiceList();
-        updateVoiceButtons("recognized");
-        resultBox.innerHTML = "音声入力を開始できませんでした。少し待ってから「やり直す」を押してください。";
-      }
-    }
-
-    function retryVoiceStep() {
-      voiceCurrentValue = null;
-      startVoiceStep();
-    }
-
-    function moveToNextVoiceStep() {
-      const key = voiceStepOrder[voiceStepIndex];
-      const metric = getMetricByKey(key);
-
-      if (voiceCurrentValue === null || voiceCurrentValue === undefined || voiceCurrentValue === "") {
-        document.getElementById("voiceRecognitionText").innerHTML = "認識結果がありません。「やり直す」を押してください。";
-        return;
-      }
-
-      voiceValues[key] = voiceCurrentValue;
-      voiceCurrentValue = null;
-      voiceStepIndex += 1;
-
-      if (voiceStepIndex >= voiceStepOrder.length) {
-        finishVoiceInput();
-        return;
-      }
-
-      startVoiceStep();
-    }
-
-    function finishVoiceInput() {
-      voiceIsListening = false;
-      voiceCurrentValue = null;
-      renderVoiceList();
-      updateVoiceButtons("complete");
-      document.getElementById("voiceRecognitionText").innerHTML = "全項目の入力が完了しました。内容に問題がなければ「一覧を反映」を押してください。";
-    }
-
-    function applyVoiceValues() {
-      voiceStepOrder.forEach(key => {
-        const input = document.getElementById(key);
-        if (input && voiceValues[key] !== undefined) {
-          input.value = voiceValues[key];
-        }
-      });
-
-      validateForm();
-      closeVoiceModal();
-    }
-
-    function setupVoiceInput() {
-      const openBtn = document.getElementById("openVoiceModalBtn");
-      const retryBtn = document.getElementById("voiceRetryBtn");
-      const nextBtn = document.getElementById("voiceNextBtn");
-      const applyBtn = document.getElementById("voiceApplyBtn");
-      const cancelBtn = document.getElementById("voiceCancelBtn");
-
-      if (!openBtn) return;
-
-      openBtn.addEventListener("click", openVoiceModal);
-      retryBtn.addEventListener("click", retryVoiceStep);
-      nextBtn.addEventListener("click", moveToNextVoiceStep);
-      applyBtn.addEventListener("click", applyVoiceValues);
-      cancelBtn.addEventListener("click", closeVoiceModal);
-    }
-
-    document.getElementById("saveBtn").addEventListener("click", saveForm);
-    document.getElementById("settingsBtn").addEventListener("click", openSettings);
-    document.getElementById("backBtn").addEventListener("click", closeSettings);
-    document.getElementById("editSelectedBtn").addEventListener("click", editSelected);
-    document.getElementById("deleteSelectedBtn").addEventListener("click", deleteSelected);
-    document.getElementById("cancelEditBtn").addEventListener("click", clearForm);
-    document.getElementById("chart").addEventListener("click", openFullScreen);
-    document.getElementById("closeFullBtn").addEventListener("click", closeFullScreen);
-    document.getElementById("resetZoomBtn").addEventListener("click", () => {
-      fullZoom = 1;
-      fullOffsetX = 0;
-      drawFullChart();
-    });
-
-    window.addEventListener("resize", () => {
-      drawMainChart();
-      if (document.getElementById("fullScreen").classList.contains("show")) {
-        drawFullChart();
-      }
-    });
-
-    buildInputs();
-    buildButtons();
-    renderHistory();
-    drawMainChart();
-    setupVoiceInput();
-    setupFullCanvasEvents();
-    loadRecords();
-  </script>
 </body>
 </html>
