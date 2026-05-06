@@ -309,6 +309,124 @@
       padding-left: 20px;
     }
 
+
+
+    .voice-simple-box {
+      margin: 12px 0;
+      padding: 12px;
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      background: #f9fafb;
+    }
+
+    .voice-main-btn {
+      width: 100%;
+      font-size: 16px;
+      padding: 14px 18px;
+    }
+
+    .voice-modal {
+      position: fixed;
+      inset: 0;
+      z-index: 500;
+      background: rgba(15, 23, 42, 0.58);
+      display: none;
+      padding: 14px;
+      overflow-y: auto;
+    }
+
+    .voice-modal.show {
+      display: block;
+    }
+
+    .voice-modal-panel {
+      width: 100%;
+      max-width: 640px;
+      margin: 16px auto;
+      background: #fff;
+      border-radius: 20px;
+      padding: 16px;
+      box-shadow: var(--shadow);
+    }
+
+    .voice-modal-title {
+      font-size: 20px;
+      font-weight: 800;
+      margin: 0 0 10px;
+    }
+
+    .voice-list {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      margin: 12px 0;
+    }
+
+    .voice-row {
+      display: flex;
+      justify-content: space-between;
+      gap: 10px;
+      align-items: center;
+      border: 1px solid var(--border);
+      background: #f9fafb;
+      border-radius: 12px;
+      padding: 10px 12px;
+      font-size: 14px;
+    }
+
+    .voice-row.active {
+      background: #dbeafe;
+      border-color: #93c5fd;
+      color: #1d4ed8;
+      font-weight: 800;
+    }
+
+    .voice-row.done {
+      background: #f0fdf4;
+      border-color: #bbf7d0;
+    }
+
+    .voice-value {
+      font-weight: 800;
+      text-align: right;
+      white-space: nowrap;
+    }
+
+    .voice-blink {
+      animation: voiceBlink 1s infinite;
+    }
+
+    @keyframes voiceBlink {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.28; }
+    }
+
+    .voice-recognition-box {
+      margin-top: 12px;
+      padding: 12px;
+      border-radius: 14px;
+      background: #f8fafc;
+      border: 1px solid var(--border);
+      line-height: 1.7;
+      font-size: 14px;
+    }
+
+    .voice-modal-buttons {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 12px;
+    }
+
+    .voice-hidden {
+      display: none !important;
+    }
+
+    button.warning {
+      background: #f97316;
+      color: #fff;
+    }
+
     .voice-box {
       margin: 12px 0;
       padding: 12px;
@@ -328,50 +446,6 @@
 
     .voice-result strong {
       color: var(--text);
-    }
-
-    .voice-preview {
-      margin-top: 10px;
-      padding: 10px;
-      border-radius: 12px;
-      background: #ffffff;
-      border: 1px solid var(--border);
-      font-size: 13px;
-      line-height: 1.7;
-      white-space: pre-wrap;
-      color: var(--text);
-    }
-
-    .voice-step-box {
-      margin-top: 10px;
-      padding: 12px;
-      border-radius: 14px;
-      background: #ffffff;
-      border: 1px solid var(--border);
-    }
-
-    .voice-step-title {
-      font-weight: 800;
-      font-size: 16px;
-      margin-bottom: 6px;
-      color: var(--main);
-    }
-
-    .voice-step-sub {
-      font-size: 13px;
-      color: var(--muted);
-      line-height: 1.6;
-    }
-
-    .voice-summary-list {
-      margin: 8px 0 0;
-      padding-left: 18px;
-      line-height: 1.8;
-    }
-
-    button.warning {
-      background: #f97316;
-      color: #fff;
     }
 
     button.listening {
@@ -408,26 +482,9 @@
       <h2>今日の記録</h2>
       <div class="date-box">記録日：<strong id="todayLabel"></strong></div>
 
-      <div class="voice-box">
-        <div class="buttons" style="margin:0;">
-          <button id="voiceBtn" class="primary" type="button">順番に音声入力開始</button>
-          <button id="retryVoiceBtn" type="button" disabled>この項目をやり直す</button>
-          <button id="nextVoiceBtn" class="primary" type="button" disabled>問題ないので次へ</button>
-          <button id="applyVoiceBtn" class="success" type="button" disabled>一覧を反映する</button>
-          <button id="clearVoiceBtn" type="button">音声入力をリセット</button>
-        </div>
-        <div id="voiceResult" class="voice-result">
-          「順番に音声入力開始」を押すと、体重から1項目ずつ聞き取ります。
-        </div>
-        <div id="voiceStepBox" class="voice-step-box" style="display:none;">
-          <div id="voiceStepTitle" class="voice-step-title"></div>
-          <div id="voiceStepSub" class="voice-step-sub"></div>
-        </div>
-        <div id="voicePreview" class="voice-preview" style="display:none;"></div>
-        <div class="hint">
-          ※各項目を1つずつ聞き取ります。結果に問題がなければ「問題ないので次へ」、違っていれば「この項目をやり直す」を押してください。<br>
-          ※腹囲は「ウエスト」と話すと認識されやすいです。最後に一覧を確認して「一覧を反映する」で入力欄に入ります。
-        </div>
+      <div class="voice-simple-box">
+        <button id="openVoiceModalBtn" class="primary voice-main-btn" type="button">音声入力開始</button>
+        <div class="hint">音声入力は専用画面で1項目ずつ行います。</div>
       </div>
 
       <div class="section-title">基本項目</div>
@@ -453,6 +510,28 @@
       </div>
     </section>
   </main>
+
+
+  <div id="voiceModal" class="voice-modal">
+    <div class="voice-modal-panel">
+      <div class="voice-modal-title">音声入力</div>
+      <div class="hint">各項目を1つずつ聞き取ります。入力中の項目は点滅します。</div>
+
+      <div id="voiceList" class="voice-list"></div>
+
+      <div class="voice-recognition-box">
+        <strong>認識結果</strong>
+        <div id="voiceRecognitionText">音声入力を開始します...</div>
+      </div>
+
+      <div class="voice-modal-buttons">
+        <button id="voiceRetryBtn" type="button">やり直す</button>
+        <button id="voiceNextBtn" class="primary" type="button">次の項目へ</button>
+        <button id="voiceApplyBtn" class="success voice-hidden" type="button">一覧を反映</button>
+        <button id="voiceCancelBtn" type="button">入力キャンセル</button>
+      </div>
+    </div>
+  </div>
 
   <div id="settingsModal" class="modal">
     <div class="modal-panel">
@@ -506,7 +585,7 @@
 
     // 【重要】ここを自分のGAS WebアプリURLに差し替えてください。
     // 例: const GAS_API_URL = "https://script.google.com/macros/s/xxxxxxxxxxxxxxxx/exec";
-    const GAS_API_URL = "https://script.google.com/macros/s/AKfycbzmgFXgmXq6S_5IZAw85GgvrthHwx9Cv8M8gtOF4Vdnjj5AYGv6SN-lOP6X4naczrt4/exec";
+    const GAS_API_URL = "ここにGASのWebアプリURLを貼り付け";
 
     function isGasApiConfigured() {
       return GAS_API_URL &&
@@ -625,10 +704,6 @@
       "ＢＭＩ": "BMI"
     };
 
-    let pendingVoiceResult = null;
-    let voiceFinalText = "";
-    let voiceInterimText = "";
-
     const voiceStepOrder = [
       "weight",
       "bodyFat",
@@ -641,9 +716,13 @@
       "waist"
     ];
 
+    let voiceModalActive = false;
     let voiceStepIndex = 0;
-    let voiceStepValues = {};
-    let currentStepResult = null;
+    let voiceValues = {};
+    let voiceCurrentValue = null;
+    let voiceRecognition = null;
+    let voiceIsListening = false;
+    let voiceLastRawText = "";
 
     let records = [];
     let selectedPeriod = "month";
@@ -1394,7 +1473,7 @@
 
 
     function normalizeVoiceText(text) {
-      let normalized = text
+      let normalized = String(text || "")
         .replace(/[０-９]/g, ch => String.fromCharCode(ch.charCodeAt(0) - 0xFEE0))
         .replace(/[．。]/g, ".")
         .replace(/[、，]/g, " ")
@@ -1416,60 +1495,42 @@
       return metrics.find(m => m.key === key);
     }
 
-    function parseSingleVoiceStep(rawText, metricKey) {
+    function parseVoiceValueForCurrentStep(rawText) {
+      const key = voiceStepOrder[voiceStepIndex];
+      const metric = getMetricByKey(key);
+      const pattern = voicePatterns.find(p => p.key === key);
       const text = normalizeVoiceText(rawText);
-      const metric = getMetricByKey(metricKey);
-      const pattern = voicePatterns.find(p => p.key === metricKey);
-
-      if (!metric || !pattern) {
-        return {
-          ok: false,
-          text,
-          message: "対象項目が見つかりませんでした。",
-          value: null
-        };
-      }
-
       const candidates = [];
 
-      // 1. 項目名つきの認識を優先
+      if (!metric || !pattern) {
+        return { ok: false, value: null, text, message: "対象項目が見つかりません。" };
+      }
+
       for (const label of pattern.labels) {
         const normalizedLabel = normalizeVoiceText(label);
         const unitPart = pattern.unitWords.length
           ? `(?:${pattern.unitWords.map(escapeRegExp).join("|")})?`
           : "";
-
         const regex = new RegExp(`${escapeRegExp(normalizedLabel)}\\s*(?:は|が|を|：|:)?\\s*([0-9]+(?:\\.[0-9]+)?)\\s*${unitPart}`, "gi");
-        const matches = [...text.matchAll(regex)];
-        matches.forEach(match => candidates.push(Number(match[1])));
-      }
-
-      // 2. 1項目ずつ聞くため、項目名がなくても数字だけ拾えるようにする
-      //    例：「60」「60キロ」「20パーセント」
-      if (candidates.length === 0) {
-        const numberRegex = /([0-9]+(?:\.[0-9]+)?)/g;
-        const matches = [...text.matchAll(numberRegex)];
-        matches.forEach(match => candidates.push(Number(match[1])));
+        [...text.matchAll(regex)].forEach(match => candidates.push(Number(match[1])));
       }
 
       if (candidates.length === 0) {
-        return {
-          ok: false,
-          text,
-          message: "数値を認識できませんでした。",
-          value: null
-        };
+        [...text.matchAll(/([0-9]+(?:\.[0-9]+)?)/g)].forEach(match => candidates.push(Number(match[1])));
       }
 
-      // 複数候補がある場合は最後の数値を採用
+      if (candidates.length === 0) {
+        return { ok: false, value: null, text, message: "数値を認識できませんでした。" };
+      }
+
       const foundValue = candidates[candidates.length - 1];
 
       if (!Number.isFinite(foundValue) || foundValue < metric.min || foundValue > metric.max) {
         return {
           ok: false,
+          value: null,
           text,
-          message: `${metric.name}の入力範囲外です（${metric.min}〜${metric.max}${metric.unit}）。認識値：${foundValue}`,
-          value: null
+          message: `${metric.name}の入力範囲外です（${metric.min}〜${metric.max}${metric.unit}）。認識値：${foundValue}`
         };
       }
 
@@ -1479,330 +1540,238 @@
 
       return {
         ok: true,
+        value: normalizedValue,
         text,
-        message: `${metric.name}：${normalizedValue}${metric.unit}`,
-        value: normalizedValue
+        message: `${metric.name}：${normalizedValue}${metric.unit}`
       };
     }
 
-    function renderCurrentVoiceStep() {
-      const stepBox = document.getElementById("voiceStepBox");
-      const title = document.getElementById("voiceStepTitle");
-      const sub = document.getElementById("voiceStepSub");
-      const preview = document.getElementById("voicePreview");
-      const nextBtn = document.getElementById("nextVoiceBtn");
-      const retryBtn = document.getElementById("retryVoiceBtn");
-      const applyBtn = document.getElementById("applyVoiceBtn");
+    function renderVoiceList() {
+      const list = document.getElementById("voiceList");
+      if (!list) return;
 
-      const metricKey = voiceStepOrder[voiceStepIndex];
-      const metric = getMetricByKey(metricKey);
+      list.innerHTML = "";
 
-      if (!metric) return;
-
-      stepBox.style.display = "block";
-      title.textContent = `聞き取り項目 ${voiceStepIndex + 1}/${voiceStepOrder.length}：${metric.name}`;
-      sub.innerHTML = `この項目の数値を話してください。例：<strong>${metric.name} ${metric.min}</strong> または <strong>${metric.min}</strong>`;
-
-      if (preview) {
-        preview.style.display = "none";
-        preview.textContent = "";
-      }
-
-      currentStepResult = null;
-      nextBtn.disabled = true;
-      retryBtn.disabled = true;
-      applyBtn.disabled = true;
-    }
-
-    function renderStepResult(rawText, result) {
-      const preview = document.getElementById("voicePreview");
-      const nextBtn = document.getElementById("nextVoiceBtn");
-      const retryBtn = document.getElementById("retryVoiceBtn");
-      const metric = getMetricByKey(voiceStepOrder[voiceStepIndex]);
-
-      currentStepResult = result;
-
-      const lines = [];
-      lines.push("【現在の項目】");
-      lines.push(metric ? metric.name : "");
-      lines.push("");
-      lines.push("【認識した文章】");
-      lines.push(rawText || "（なし）");
-      lines.push("");
-      lines.push("【補正後】");
-      lines.push(result.text || "（なし）");
-      lines.push("");
-
-      if (result.ok) {
-        lines.push("【認識結果】");
-        lines.push("・" + result.message);
-      } else {
-        lines.push("【認識できませんでした】");
-        lines.push(result.message);
-      }
-
-      preview.textContent = lines.join("\n");
-      preview.style.display = "block";
-
-      nextBtn.disabled = !result.ok;
-      retryBtn.disabled = false;
-    }
-
-    function renderVoiceSummary() {
-      const stepBox = document.getElementById("voiceStepBox");
-      const title = document.getElementById("voiceStepTitle");
-      const sub = document.getElementById("voiceStepSub");
-      const preview = document.getElementById("voicePreview");
-      const applyBtn = document.getElementById("applyVoiceBtn");
-      const nextBtn = document.getElementById("nextVoiceBtn");
-      const retryBtn = document.getElementById("retryVoiceBtn");
-      const voiceResult = document.getElementById("voiceResult");
-
-      stepBox.style.display = "block";
-      title.textContent = "全項目の聞き取りが完了しました";
-      sub.textContent = "内容に問題がなければ「一覧を反映する」を押してください。";
-
-      const lines = [];
-      lines.push("【反映予定一覧】");
-
-      voiceStepOrder.forEach(key => {
+      voiceStepOrder.forEach((key, index) => {
         const metric = getMetricByKey(key);
-        const value = voiceStepValues[key];
+        const row = document.createElement("div");
+        const name = document.createElement("div");
+        const value = document.createElement("div");
 
-        if (metric && value !== undefined && value !== null && value !== "") {
-          lines.push(`・${metric.name}：${value}${metric.unit}`);
-        } else if (metric) {
-          lines.push(`・${metric.name}：未入力`);
+        row.className = "voice-row";
+        name.textContent = metric.name;
+        value.className = "voice-value";
+
+        if (voiceValues[key] !== undefined && voiceValues[key] !== null && voiceValues[key] !== "") {
+          row.classList.add("done");
+          value.textContent = `${voiceValues[key]}${metric.unit}`;
+        } else if (index === voiceStepIndex && voiceIsListening) {
+          row.classList.add("active", "voice-blink");
+          value.textContent = "音声入力中";
+        } else if (index === voiceStepIndex && voiceCurrentValue !== null) {
+          row.classList.add("active");
+          value.textContent = `${voiceCurrentValue}${metric.unit}`;
+        } else {
+          value.textContent = "";
         }
+
+        row.appendChild(name);
+        row.appendChild(value);
+        list.appendChild(row);
       });
-
-      preview.textContent = lines.join("\n");
-      preview.style.display = "block";
-
-      applyBtn.disabled = false;
-      nextBtn.disabled = true;
-      retryBtn.disabled = true;
-      voiceResult.innerHTML = "<strong>聞き取り完了。</strong>一覧を確認してください。";
     }
 
-    function startCurrentVoiceStep() {
-      const voiceBtn = document.getElementById("voiceBtn");
-      const voiceResult = document.getElementById("voiceResult");
-      const metric = getMetricByKey(voiceStepOrder[voiceStepIndex]);
+    function updateVoiceButtons(mode) {
+      const retryBtn = document.getElementById("voiceRetryBtn");
+      const nextBtn = document.getElementById("voiceNextBtn");
+      const applyBtn = document.getElementById("voiceApplyBtn");
 
-      if (!metric) return;
-
-      voiceFinalText = "";
-      voiceInterimText = "";
-      currentStepResult = null;
-
-      voiceResult.innerHTML = `<strong>${metric.name}</strong> の数値を話してください。`;
-      voiceBtn.textContent = "聞き取り中...";
-    }
-
-    function moveToNextVoiceStep() {
-      const metricKey = voiceStepOrder[voiceStepIndex];
-
-      if (currentStepResult && currentStepResult.ok) {
-        voiceStepValues[metricKey] = currentStepResult.value;
+      if (mode === "listening") {
+        retryBtn.classList.add("voice-hidden");
+        nextBtn.classList.add("voice-hidden");
+        applyBtn.classList.add("voice-hidden");
+      } else if (mode === "recognized") {
+        const nextMetric = getMetricByKey(voiceStepOrder[voiceStepIndex + 1]);
+        retryBtn.classList.remove("voice-hidden");
+        nextBtn.classList.remove("voice-hidden");
+        applyBtn.classList.add("voice-hidden");
+        nextBtn.textContent = nextMetric ? `次の項目（${nextMetric.name}）へ` : "一覧へ";
+      } else if (mode === "complete") {
+        retryBtn.classList.add("voice-hidden");
+        nextBtn.classList.add("voice-hidden");
+        applyBtn.classList.remove("voice-hidden");
       }
+    }
 
-      voiceStepIndex += 1;
+    function openVoiceModal() {
+      const modal = document.getElementById("voiceModal");
+      voiceModalActive = true;
+      voiceStepIndex = 0;
+      voiceValues = {};
+      voiceCurrentValue = null;
+      voiceLastRawText = "";
+      modal.classList.add("show");
+      startVoiceStep();
+    }
 
-      if (voiceStepIndex >= voiceStepOrder.length) {
-        renderVoiceSummary();
+    function closeVoiceModal() {
+      voiceModalActive = false;
+      if (voiceRecognition && voiceIsListening) {
+        try { voiceRecognition.abort(); } catch (e) {}
+      }
+      voiceIsListening = false;
+      voiceCurrentValue = null;
+      document.getElementById("voiceModal").classList.remove("show");
+    }
+
+    function startVoiceStep() {
+      const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+      const metric = getMetricByKey(voiceStepOrder[voiceStepIndex]);
+      const resultBox = document.getElementById("voiceRecognitionText");
+
+      if (!SpeechRecognition) {
+        resultBox.innerHTML = "このブラウザでは音声入力に対応していません。Chromeでお試しください。";
         return;
       }
 
-      renderCurrentVoiceStep();
+      if (!metric) return;
 
-      const voiceResult = document.getElementById("voiceResult");
-      const metric = getMetricByKey(voiceStepOrder[voiceStepIndex]);
-      voiceResult.innerHTML = `次は <strong>${metric.name}</strong> です。「音声入力開始」を押してください。`;
+      voiceCurrentValue = null;
+      voiceLastRawText = "";
+      voiceIsListening = true;
+      resultBox.innerHTML = `<strong>${metric.name}</strong> を話してください。`;
+      updateVoiceButtons("listening");
+      renderVoiceList();
+
+      try {
+        if (voiceRecognition) {
+          try { voiceRecognition.abort(); } catch (e) {}
+        }
+
+        voiceRecognition = new SpeechRecognition();
+        voiceRecognition.lang = "ja-JP";
+        voiceRecognition.interimResults = true;
+        voiceRecognition.continuous = false;
+        voiceRecognition.maxAlternatives = 1;
+
+        let finalText = "";
+        let interimText = "";
+
+        voiceRecognition.onresult = event => {
+          for (let i = event.resultIndex; i < event.results.length; i++) {
+            const transcript = event.results[i][0].transcript.trim();
+            if (!transcript) continue;
+            if (event.results[i].isFinal) finalText = transcript;
+            else interimText = transcript;
+          }
+
+          const displayText = finalText || interimText || "...";
+          resultBox.innerHTML = `<strong>認識中：</strong>${displayText}`;
+        };
+
+        voiceRecognition.onerror = event => {
+          voiceIsListening = false;
+          renderVoiceList();
+          updateVoiceButtons("recognized");
+          resultBox.innerHTML = `音声入力でエラーが発生しました：${event.error}<br>「やり直す」を押してください。`;
+        };
+
+        voiceRecognition.onend = () => {
+          if (!voiceModalActive) return;
+
+          voiceIsListening = false;
+          voiceLastRawText = (finalText || interimText || "").trim();
+
+          if (!voiceLastRawText) {
+            renderVoiceList();
+            updateVoiceButtons("recognized");
+            resultBox.innerHTML = "音声を認識できませんでした。「やり直す」を押してください。";
+            return;
+          }
+
+          const parsed = parseVoiceValueForCurrentStep(voiceLastRawText);
+
+          if (parsed.ok) {
+            voiceCurrentValue = parsed.value;
+            resultBox.innerHTML = `<strong>認識結果：</strong>${parsed.message}<br><span style="color:#6b7280;">認識文章：${parsed.text}</span>`;
+          } else {
+            voiceCurrentValue = null;
+            resultBox.innerHTML = `<strong>認識結果：</strong>${parsed.message}<br><span style="color:#6b7280;">認識文章：${parsed.text}</span>`;
+          }
+
+          renderVoiceList();
+          updateVoiceButtons("recognized");
+        };
+
+        voiceRecognition.start();
+      } catch (e) {
+        voiceIsListening = false;
+        renderVoiceList();
+        updateVoiceButtons("recognized");
+        resultBox.innerHTML = "音声入力を開始できませんでした。少し待ってから「やり直す」を押してください。";
+      }
     }
 
-    function applyVoiceResult() {
+    function retryVoiceStep() {
+      voiceCurrentValue = null;
+      startVoiceStep();
+    }
+
+    function moveToNextVoiceStep() {
+      const key = voiceStepOrder[voiceStepIndex];
+      const metric = getMetricByKey(key);
+
+      if (voiceCurrentValue === null || voiceCurrentValue === undefined || voiceCurrentValue === "") {
+        document.getElementById("voiceRecognitionText").innerHTML = "認識結果がありません。「やり直す」を押してください。";
+        return;
+      }
+
+      voiceValues[key] = voiceCurrentValue;
+      voiceCurrentValue = null;
+      voiceStepIndex += 1;
+
+      if (voiceStepIndex >= voiceStepOrder.length) {
+        finishVoiceInput();
+        return;
+      }
+
+      startVoiceStep();
+    }
+
+    function finishVoiceInput() {
+      voiceIsListening = false;
+      voiceCurrentValue = null;
+      renderVoiceList();
+      updateVoiceButtons("complete");
+      document.getElementById("voiceRecognitionText").innerHTML = "全項目の入力が完了しました。内容に問題がなければ「一覧を反映」を押してください。";
+    }
+
+    function applyVoiceValues() {
       voiceStepOrder.forEach(key => {
         const input = document.getElementById(key);
-        const value = voiceStepValues[key];
-
-        if (input && value !== undefined && value !== null && value !== "") {
-          input.value = value;
+        if (input && voiceValues[key] !== undefined) {
+          input.value = voiceValues[key];
         }
       });
 
       validateForm();
-
-      const voiceResult = document.getElementById("voiceResult");
-      if (voiceResult) {
-        voiceResult.innerHTML = "<strong>一覧を反映しました。</strong>";
-      }
-
-      document.getElementById("applyVoiceBtn").disabled = true;
-    }
-
-    function resetVoiceStepInput() {
-      voiceStepIndex = 0;
-      voiceStepValues = {};
-      currentStepResult = null;
-      voiceFinalText = "";
-      voiceInterimText = "";
-
-      const voiceResult = document.getElementById("voiceResult");
-      const preview = document.getElementById("voicePreview");
-      const stepBox = document.getElementById("voiceStepBox");
-
-      voiceResult.innerHTML = "「順番に音声入力開始」を押すと、体重から1項目ずつ聞き取ります。";
-
-      if (preview) {
-        preview.style.display = "none";
-        preview.textContent = "";
-      }
-
-      if (stepBox) {
-        stepBox.style.display = "none";
-      }
-
-      document.getElementById("voiceBtn").disabled = false;
-      document.getElementById("voiceBtn").textContent = "順番に音声入力開始";
-      document.getElementById("retryVoiceBtn").disabled = true;
-      document.getElementById("nextVoiceBtn").disabled = true;
-      document.getElementById("applyVoiceBtn").disabled = true;
+      closeVoiceModal();
     }
 
     function setupVoiceInput() {
-      const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-      const voiceBtn = document.getElementById("voiceBtn");
-      const retryVoiceBtn = document.getElementById("retryVoiceBtn");
-      const nextVoiceBtn = document.getElementById("nextVoiceBtn");
-      const applyVoiceBtn = document.getElementById("applyVoiceBtn");
-      const clearVoiceBtn = document.getElementById("clearVoiceBtn");
-      const voiceResult = document.getElementById("voiceResult");
+      const openBtn = document.getElementById("openVoiceModalBtn");
+      const retryBtn = document.getElementById("voiceRetryBtn");
+      const nextBtn = document.getElementById("voiceNextBtn");
+      const applyBtn = document.getElementById("voiceApplyBtn");
+      const cancelBtn = document.getElementById("voiceCancelBtn");
 
-      let recognition = null;
-      let isListening = false;
+      if (!openBtn) return;
 
-      if (!SpeechRecognition) {
-        voiceBtn.disabled = true;
-        retryVoiceBtn.disabled = true;
-        nextVoiceBtn.disabled = true;
-        applyVoiceBtn.disabled = true;
-        voiceResult.innerHTML = "このブラウザでは音声入力に対応していません。Chromeでの利用をおすすめします。";
-        return;
-      }
-
-      function createRecognition() {
-        const r = new SpeechRecognition();
-
-        r.lang = "ja-JP";
-        r.interimResults = true;
-        r.continuous = false;
-        r.maxAlternatives = 1;
-
-        r.onstart = () => {
-          isListening = true;
-          startCurrentVoiceStep();
-
-          voiceBtn.classList.add("listening");
-          voiceBtn.disabled = true;
-          retryVoiceBtn.disabled = true;
-          nextVoiceBtn.disabled = true;
-          applyVoiceBtn.disabled = true;
-        };
-
-        r.onresult = event => {
-          voiceInterimText = "";
-
-          for (let i = event.resultIndex; i < event.results.length; i++) {
-            const transcript = event.results[i][0].transcript.trim();
-            if (!transcript) continue;
-
-            if (event.results[i].isFinal) {
-              voiceFinalText = transcript;
-            } else {
-              voiceInterimText = transcript;
-            }
-          }
-
-          const displayText = (voiceFinalText || voiceInterimText || "").trim();
-          const metric = getMetricByKey(voiceStepOrder[voiceStepIndex]);
-
-          voiceResult.innerHTML = `<strong>${metric.name} 認識中：</strong>${displayText || "..."}`;
-        };
-
-        r.onerror = event => {
-          if (event.error === "no-speech") {
-            voiceResult.innerHTML = "音声が検出されませんでした。「この項目をやり直す」を押してください。";
-          } else if (event.error === "not-allowed") {
-            voiceResult.innerHTML = "音声入力でエラーが発生しました：not-allowed<br>マイク権限、またはブラウザ側の音声認識許可を確認してください。";
-          } else {
-            voiceResult.innerHTML = `音声入力でエラーが発生しました：${event.error}`;
-          }
-
-          retryVoiceBtn.disabled = false;
-        };
-
-        r.onend = () => {
-          const rawText = (voiceFinalText || voiceInterimText || "").trim();
-
-          isListening = false;
-          voiceBtn.classList.remove("listening");
-          voiceBtn.textContent = "順番に音声入力開始";
-          voiceBtn.disabled = false;
-
-          if (rawText) {
-            const result = parseSingleVoiceStep(rawText, voiceStepOrder[voiceStepIndex]);
-            voiceResult.innerHTML = "<strong>聞き取り終了。</strong>結果を確認してください。";
-            renderStepResult(rawText, result);
-          } else {
-            voiceResult.innerHTML = "聞き取り結果がありませんでした。「この項目をやり直す」を押してください。";
-            retryVoiceBtn.disabled = false;
-          }
-        };
-
-        return r;
-      }
-
-      voiceBtn.addEventListener("click", () => {
-        if (voiceStepIndex >= voiceStepOrder.length) {
-          resetVoiceStepInput();
-        }
-
-        if (Object.keys(voiceStepValues).length === 0 && voiceStepIndex === 0) {
-          renderCurrentVoiceStep();
-        }
-
-        if (isListening) return;
-
-        try {
-          if (recognition) {
-            recognition.abort();
-          }
-
-          recognition = createRecognition();
-          recognition.start();
-        } catch (e) {
-          voiceResult.innerHTML = "音声入力を開始できませんでした。少し待ってから再度押してください。";
-          voiceBtn.disabled = false;
-        }
-      });
-
-      retryVoiceBtn.addEventListener("click", () => {
-        currentStepResult = null;
-        const preview = document.getElementById("voicePreview");
-        if (preview) {
-          preview.style.display = "none";
-          preview.textContent = "";
-        }
-
-        voiceResult.innerHTML = "同じ項目をもう一度聞き取ります。「順番に音声入力開始」を押してください。";
-        retryVoiceBtn.disabled = true;
-        nextVoiceBtn.disabled = true;
-      });
-
-      nextVoiceBtn.addEventListener("click", moveToNextVoiceStep);
-      applyVoiceBtn.addEventListener("click", applyVoiceResult);
-      clearVoiceBtn.addEventListener("click", resetVoiceStepInput);
+      openBtn.addEventListener("click", openVoiceModal);
+      retryBtn.addEventListener("click", retryVoiceStep);
+      nextBtn.addEventListener("click", moveToNextVoiceStep);
+      applyBtn.addEventListener("click", applyVoiceValues);
+      cancelBtn.addEventListener("click", closeVoiceModal);
     }
 
     document.getElementById("saveBtn").addEventListener("click", saveForm);
