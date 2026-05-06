@@ -475,7 +475,7 @@
 
     // 【重要】ここを自分のGAS WebアプリURLに差し替えてください。
     // 例: const GAS_API_URL = "https://script.google.com/macros/s/xxxxxxxxxxxxxxxx/exec";
-    const GAS_API_URL = "https://script.google.com/macros/s/AKfycbzmgFXgmXq6S_5IZAw85GgvrthHwx9Cv8M8gtOF4Vdnjj5AYGv6SN-lOP6X4naczrt4/exec";
+    const GAS_API_URL = "ここにGASのWebアプリURLを貼り付け";
 
     function isGasApiConfigured() {
       return GAS_API_URL &&
@@ -1372,7 +1372,10 @@
       const values = {};
 
       voicePatterns.forEach(pattern => {
-        let foundValue = null;
+        const metric = metrics.find(m => m.key === pattern.key);
+        if (!metric) return;
+
+        let candidates = [];
 
         for (const label of pattern.labels) {
           const normalizedLabel = normalizeVoiceText(label);
@@ -1380,19 +1383,18 @@
             ? `(?:${pattern.unitWords.map(escapeRegExp).join("|")})?`
             : "";
 
-          const regex = new RegExp(`${escapeRegExp(normalizedLabel)}\\s*(?:は|が|を|：|:)?\\s*([0-9]+(?:\\.[0-9]+)?)\\s*${unitPart}`, "i");
-          const match = text.match(regex);
+          const regex = new RegExp(`${escapeRegExp(normalizedLabel)}\\s*(?:は|が|を|：|:)?\\s*([0-9]+(?:\\.[0-9]+)?)\\s*${unitPart}`, "gi");
+          const matches = [...text.matchAll(regex)];
 
-          if (match) {
-            foundValue = Number(match[1]);
-            break;
-          }
+          matches.forEach(match => {
+            candidates.push(Number(match[1]));
+          });
         }
 
-        if (foundValue === null) return;
+        if (candidates.length === 0) return;
 
-        const metric = metrics.find(m => m.key === pattern.key);
-        if (!metric) return;
+        // 同じ項目が複数回認識された場合は、最後の値を採用する。
+        const foundValue = candidates[candidates.length - 1];
 
         if (!Number.isFinite(foundValue) || foundValue < metric.min || foundValue > metric.max) {
           unclear.push(`${metric.name}：${foundValue}（範囲外）`);
@@ -1410,6 +1412,25 @@
       return { text, updated, unclear, values };
     }
 
+    function cleanFinalVoiceText(text) {
+      // 確定結果だけでも同じフレーズが繰り返される場合に備え、連続する同一フレーズを整理する。
+      const normalized = normalizeVoiceText(text);
+      const parts = normalized
+        .split(/\s+/)
+        .map(s => s.trim())
+        .filter(Boolean);
+
+      const cleaned = [];
+
+      parts.forEach(part => {
+        if (cleaned[cleaned.length - 1] !== part) {
+          cleaned.push(part);
+        }
+      });
+
+      return cleaned.join(" ");
+    }
+
     function renderVoicePreview(result, rawText = "") {
       const preview = document.getElementById("voicePreview");
       const applyBtn = document.getElementById("applyVoiceBtn");
@@ -1419,7 +1440,7 @@
       pendingVoiceResult = result;
 
       const lines = [];
-      lines.push("【認識した文章】");
+      lines.push("【確定した認識文章】");
       lines.push(rawText || "（なし）");
       lines.push("");
       lines.push("【補正後】");
@@ -1513,10 +1534,14 @@
         };
 
         r.onresult = event => {
+          // interimResults は画面表示だけに使う。
+          // 反映・解析には isFinal === true の確定結果だけを使う。
           voiceInterimText = "";
 
           for (let i = event.resultIndex; i < event.results.length; i++) {
-            const transcript = event.results[i][0].transcript;
+            const transcript = event.results[i][0].transcript.trim();
+
+            if (!transcript) continue;
 
             if (event.results[i].isFinal) {
               voiceFinalText += transcript + " ";
@@ -1540,7 +1565,9 @@
         };
 
         r.onend = () => {
-          const rawText = (voiceFinalText + voiceInterimText).trim();
+          // 解析には途中結果を含めない。確定結果のみ使用する。
+          // これにより「体重80キロ」が何度も重複して反映される問題を防ぐ。
+          const rawText = cleanFinalVoiceText(voiceFinalText.trim());
 
           isListening = false;
           voiceBtn.classList.remove("listening");
