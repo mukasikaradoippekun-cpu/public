@@ -736,6 +736,9 @@
     let voiceAutoCurrentIndex = 0;
     let voiceAutoRecognition = null;
     let voiceAutoListening = false;
+    let voiceAutoCanceled = false;
+    let voiceAutoSessionId = 0;
+    let voiceAutoRetryTimer = null;
     let voiceFinalText = "";
     let voiceInterimText = "";
 
@@ -1630,7 +1633,9 @@
 
         div.addEventListener("click", () => {
           voiceAutoCurrentIndex = index;
-          startVoiceAutoRecognition();
+          voiceAutoSessionId += 1;
+          voiceAutoCanceled = false;
+          startVoiceAutoRecognition(voiceAutoSessionId);
         });
 
         list.appendChild(div);
@@ -1647,7 +1652,31 @@
       if (el) el.innerHTML = message;
     }
 
+    function clearVoiceAutoRetryTimer() {
+      if (voiceAutoRetryTimer) {
+        clearTimeout(voiceAutoRetryTimer);
+        voiceAutoRetryTimer = null;
+      }
+    }
+
+    function scheduleVoiceAutoRetry(sessionId, delay = 1000) {
+      clearVoiceAutoRetryTimer();
+
+      voiceAutoRetryTimer = setTimeout(() => {
+        if (voiceAutoCanceled) return;
+        if (sessionId !== voiceAutoSessionId) return;
+        if (!document.getElementById("voiceAutoModal").classList.contains("show")) return;
+
+        startVoiceAutoRecognition(sessionId);
+      }, delay);
+    }
+
     function openVoiceAutoModal() {
+      clearVoiceAutoRetryTimer();
+
+      voiceAutoCanceled = false;
+      voiceAutoSessionId += 1;
+
       seedVoiceValuesFromInputs();
 
       const nextIndex = findNextUnfilledIndex(0);
@@ -1662,10 +1691,15 @@
         return;
       }
 
-      startVoiceAutoRecognition();
+      startVoiceAutoRecognition(voiceAutoSessionId);
     }
 
-    function startVoiceAutoRecognition() {
+    function startVoiceAutoRecognition(sessionId = voiceAutoSessionId) {
+      if (voiceAutoCanceled) return;
+      if (sessionId !== voiceAutoSessionId) return;
+      if (!document.getElementById("voiceAutoModal").classList.contains("show")) return;
+
+      clearVoiceAutoRetryTimer();
       const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
 
       if (!SpeechRecognition) {
@@ -1690,6 +1724,7 @@
       setVoiceAutoResult(`<strong>${metric.name}</strong> を音声入力中です。数値を話してください。`);
 
       voiceAutoRecognition.onresult = event => {
+        if (voiceAutoCanceled || sessionId !== voiceAutoSessionId) return;
         const transcript = event.results[0][0].transcript;
         const result = extractVoiceNumberForMetric(transcript, metric.key);
 
@@ -1699,32 +1734,40 @@
           renderVoiceAutoList();
           setVoiceAutoResult(`認識結果：${result.text}<br><strong>${result.message}</strong>`);
 
-          setTimeout(moveVoiceAutoNext, 700);
+          const sessionAtResult = sessionId;
+          clearVoiceAutoRetryTimer();
+          voiceAutoRetryTimer = setTimeout(() => {
+            if (voiceAutoCanceled) return;
+            if (sessionAtResult !== voiceAutoSessionId) return;
+            moveVoiceAutoNext(sessionAtResult);
+          }, 700);
         } else {
           voiceAutoListening = false;
           renderVoiceAutoList();
           setVoiceAutoResult(`認識結果：${result.text || "なし"}<br>${result.message}<br>同じ項目をもう一度聞き取ります。`);
 
-          setTimeout(startVoiceAutoRecognition, 1000);
+          scheduleVoiceAutoRetry(sessionId, 1000);
         }
       };
 
       voiceAutoRecognition.onerror = event => {
+        if (voiceAutoCanceled || sessionId !== voiceAutoSessionId) return;
         voiceAutoListening = false;
         renderVoiceAutoList();
 
         if (event.error === "no-speech") {
           setVoiceAutoResult(`${metric.name} の音声が検出されませんでした。同じ項目をもう一度聞き取ります。`);
-          setTimeout(startVoiceAutoRecognition, 1000);
+          scheduleVoiceAutoRetry(sessionId, 1000);
         } else if (event.error === "not-allowed") {
           setVoiceAutoResult("音声入力でエラーが発生しました：not-allowed<br>マイク権限を確認してください。");
         } else {
           setVoiceAutoResult(`音声入力エラー：${event.error}<br>同じ項目をもう一度聞き取ります。`);
-          setTimeout(startVoiceAutoRecognition, 1000);
+          scheduleVoiceAutoRetry(sessionId, 1000);
         }
       };
 
       voiceAutoRecognition.onend = () => {
+        if (voiceAutoCanceled || sessionId !== voiceAutoSessionId) return;
         voiceAutoListening = false;
         renderVoiceAutoList();
       };
@@ -1732,7 +1775,10 @@
       voiceAutoRecognition.start();
     }
 
-    function moveVoiceAutoNext() {
+    function moveVoiceAutoNext(sessionId = voiceAutoSessionId) {
+      if (voiceAutoCanceled) return;
+      if (sessionId !== voiceAutoSessionId) return;
+      if (!document.getElementById("voiceAutoModal").classList.contains("show")) return;
       const nextIndex = findNextUnfilledIndex(voiceAutoCurrentIndex + 1);
 
       if (nextIndex === -1) {
@@ -1745,7 +1791,7 @@
 
       voiceAutoCurrentIndex = nextIndex;
       renderVoiceAutoList();
-      startVoiceAutoRecognition();
+      startVoiceAutoRecognition(sessionId);
     }
 
     function applyVoiceAutoValues() {
@@ -1761,12 +1807,24 @@
     }
 
     function closeVoiceAutoModal() {
+      voiceAutoCanceled = true;
+      voiceAutoSessionId += 1;
+      clearVoiceAutoRetryTimer();
+
       if (voiceAutoRecognition) {
-        try { voiceAutoRecognition.abort(); } catch (e) {}
+        try {
+          voiceAutoRecognition.onresult = null;
+          voiceAutoRecognition.onerror = null;
+          voiceAutoRecognition.onend = null;
+          voiceAutoRecognition.abort();
+        } catch (e) {}
       }
 
+      voiceAutoRecognition = null;
       voiceAutoListening = false;
+
       document.getElementById("voiceAutoModal").classList.remove("show");
+      renderVoiceAutoList();
     }
 
     function setupVoiceInput() {
