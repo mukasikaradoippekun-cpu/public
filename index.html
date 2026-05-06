@@ -330,6 +330,23 @@
       color: var(--text);
     }
 
+    .voice-preview {
+      margin-top: 10px;
+      padding: 10px;
+      border-radius: 12px;
+      background: #ffffff;
+      border: 1px solid var(--border);
+      font-size: 13px;
+      line-height: 1.7;
+      white-space: pre-wrap;
+      color: var(--text);
+    }
+
+    button.warning {
+      background: #f97316;
+      color: #fff;
+    }
+
     button.listening {
       background: #f97316;
       color: #fff;
@@ -366,14 +383,19 @@
 
       <div class="voice-box">
         <div class="buttons" style="margin:0;">
-          <button id="voiceBtn" class="primary" type="button">音声入力</button>
+          <button id="voiceBtn" class="primary" type="button">音声入力開始</button>
+          <button id="voiceStopBtn" class="warning" type="button" disabled>停止</button>
+          <button id="applyVoiceBtn" class="success" type="button" disabled>反映する</button>
           <button id="clearVoiceBtn" type="button">認識結果を消す</button>
         </div>
         <div id="voiceResult" class="voice-result">
-          例：「体重 72.5キロ、体脂肪率 18.4パーセント、腹囲 84センチ」
+          例：「体重 72.5、体脂肪率 18.4、ウエスト 84」<br>
+          ※腹囲は「ウエスト」と話すと認識されやすいです。
         </div>
+        <div id="voicePreview" class="voice-preview" style="display:none;"></div>
         <div class="hint">
-          ※話した項目だけ入力します。言っていない項目や不明瞭な項目は空白のまま残ります。追加で何度でも音声入力できます。
+          ※「開始」後、話し終えたら「停止」を押してください。認識結果を補正して表示し、「反映する」で入力欄に入ります。<br>
+          ※「福井」は「腹囲」に、「内蔵脂肪」は「内臓脂肪」に自動補正します。
         </div>
       </div>
 
@@ -453,7 +475,7 @@
 
     // 【重要】ここを自分のGAS WebアプリURLに差し替えてください。
     // 例: const GAS_API_URL = "https://script.google.com/macros/s/xxxxxxxxxxxxxxxx/exec";
-    const GAS_API_URL = "https://script.google.com/macros/s/AKfycbzmgFXgmXq6S_5IZAw85GgvrthHwx9Cv8M8gtOF4Vdnjj5AYGv6SN-lOP6X4naczrt4/exec";
+    const GAS_API_URL = "ここにGASのWebアプリURLを貼り付け";
 
     function isGasApiConfigured() {
       return GAS_API_URL &&
@@ -549,8 +571,32 @@
       { key: "bodyAge", labels: ["体年齢", "身体年齢"], unitWords: ["歳", "才"] },
       { key: "subcutaneousFat", labels: ["全身皮下脂肪率", "皮下脂肪率", "皮下脂肪"], unitWords: ["パーセント", "%", "％"] },
       { key: "skeletalMuscle", labels: ["全身骨格筋率", "骨格筋率", "骨格筋"], unitWords: ["パーセント", "%", "％"] },
-      { key: "waist", labels: ["腹囲", "ウエスト", "ウェスト"], unitWords: ["センチ", "cm"] }
+      { key: "waist", labels: ["腹囲", "福井", "ふくい", "ウエスト", "ウェスト"], unitWords: ["センチ", "cm"] }
     ];
+
+    const voiceAliasMap = {
+      "福井": "腹囲",
+      "ふくい": "腹囲",
+      "フクイ": "腹囲",
+      "ウエスト": "腹囲",
+      "ウェスト": "腹囲",
+      "内蔵脂肪": "内臓脂肪",
+      "内臓脂肪率": "内臓脂肪",
+      "基礎体謝": "基礎代謝",
+      "基礎大社": "基礎代謝",
+      "体年令": "体年齢",
+      "身体年齢": "体年齢",
+      "皮下脂肪": "皮下脂肪率",
+      "骨格金率": "骨格筋率",
+      "骨格金": "骨格筋率",
+      "骨格筋": "骨格筋率",
+      "ビーエムアイ": "BMI",
+      "ＢＭＩ": "BMI"
+    };
+
+    let pendingVoiceResult = null;
+    let voiceFinalText = "";
+    let voiceInterimText = "";
 
     let records = [];
     let selectedPeriod = "month";
@@ -1301,12 +1347,18 @@
 
 
     function normalizeVoiceText(text) {
-      return text
+      let normalized = text
         .replace(/[０-９]/g, ch => String.fromCharCode(ch.charCodeAt(0) - 0xFEE0))
         .replace(/[．。]/g, ".")
         .replace(/[、，]/g, " ")
         .replace(/\s+/g, " ")
         .trim();
+
+      Object.keys(voiceAliasMap).forEach(from => {
+        normalized = normalized.replaceAll(from, voiceAliasMap[from]);
+      });
+
+      return normalized;
     }
 
     function escapeRegExp(str) {
@@ -1317,16 +1369,20 @@
       const text = normalizeVoiceText(rawText);
       const updated = [];
       const unclear = [];
+      const values = {};
 
       voicePatterns.forEach(pattern => {
         let foundValue = null;
 
         for (const label of pattern.labels) {
+          const normalizedLabel = normalizeVoiceText(label);
           const unitPart = pattern.unitWords.length
             ? `(?:${pattern.unitWords.map(escapeRegExp).join("|")})?`
             : "";
-          const regex = new RegExp(`${escapeRegExp(label)}\\s*(?:は|が|を|：|:)?\\s*([0-9]+(?:\\.[0-9]+)?)\\s*${unitPart}`, "i");
+
+          const regex = new RegExp(`${escapeRegExp(normalizedLabel)}\\s*(?:は|が|を|：|:)?\\s*([0-9]+(?:\\.[0-9]+)?)\\s*${unitPart}`, "i");
           const match = text.match(regex);
+
           if (match) {
             foundValue = Number(match[1]);
             break;
@@ -1343,86 +1399,216 @@
           return;
         }
 
-        const normalized = metric.decimals === 0
+        const normalizedValue = metric.decimals === 0
           ? String(Math.round(foundValue))
           : foundValue.toFixed(metric.decimals);
 
-        document.getElementById(metric.key).value = normalized;
-        updated.push(`${metric.name}：${normalized}${metric.unit}`);
+        values[metric.key] = normalizedValue;
+        updated.push(`${metric.name}：${normalizedValue}${metric.unit}`);
+      });
+
+      return { text, updated, unclear, values };
+    }
+
+    function renderVoicePreview(result, rawText = "") {
+      const preview = document.getElementById("voicePreview");
+      const applyBtn = document.getElementById("applyVoiceBtn");
+
+      if (!preview || !applyBtn) return;
+
+      pendingVoiceResult = result;
+
+      const lines = [];
+      lines.push("【認識した文章】");
+      lines.push(rawText || "（なし）");
+      lines.push("");
+      lines.push("【補正後】");
+      lines.push(result.text || "（なし）");
+      lines.push("");
+
+      if (result.updated.length > 0) {
+        lines.push("【反映予定】");
+        result.updated.forEach(item => lines.push("・" + item));
+      } else {
+        lines.push("【反映予定】");
+        lines.push("反映できる項目が見つかりませんでした。");
+      }
+
+      if (result.unclear.length > 0) {
+        lines.push("");
+        lines.push("【反映しない項目】");
+        result.unclear.forEach(item => lines.push("・" + item));
+      }
+
+      preview.textContent = lines.join("\n");
+      preview.style.display = "block";
+      applyBtn.disabled = result.updated.length === 0;
+    }
+
+    function applyVoiceResult() {
+      if (!pendingVoiceResult || !pendingVoiceResult.values) return;
+
+      Object.keys(pendingVoiceResult.values).forEach(key => {
+        const input = document.getElementById(key);
+        if (input) {
+          input.value = pendingVoiceResult.values[key];
+        }
       });
 
       validateForm();
 
-      return { text, updated, unclear };
+      const voiceResult = document.getElementById("voiceResult");
+      if (voiceResult) {
+        voiceResult.innerHTML = `<strong>反映しました：</strong>${pendingVoiceResult.updated.join("、")}`;
+      }
+
+      document.getElementById("applyVoiceBtn").disabled = true;
     }
 
     function setupVoiceInput() {
       const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
       const voiceBtn = document.getElementById("voiceBtn");
+      const voiceStopBtn = document.getElementById("voiceStopBtn");
+      const applyVoiceBtn = document.getElementById("applyVoiceBtn");
       const clearVoiceBtn = document.getElementById("clearVoiceBtn");
       const voiceResult = document.getElementById("voiceResult");
+      const voicePreview = document.getElementById("voicePreview");
+
+      let recognition = null;
+      let isListening = false;
 
       if (!SpeechRecognition) {
         voiceBtn.disabled = true;
+        voiceStopBtn.disabled = true;
+        applyVoiceBtn.disabled = true;
         voiceResult.innerHTML = "このブラウザでは音声入力に対応していません。Chromeでの利用をおすすめします。";
         return;
       }
 
-      const recognition = new SpeechRecognition();
-      recognition.lang = "ja-JP";
-      recognition.interimResults = false;
-      recognition.continuous = false;
+      function createRecognition() {
+        const r = new SpeechRecognition();
+        r.lang = "ja-JP";
+        r.interimResults = true;
+        r.continuous = true;
+        r.maxAlternatives = 1;
 
-      recognition.onstart = () => {
-        voiceBtn.classList.add("listening");
-        voiceBtn.textContent = "聞き取り中...";
-        voiceResult.innerHTML = "話してください。例：体重 72.5キロ、体脂肪率 18.4パーセント";
-      };
+        r.onstart = () => {
+          isListening = true;
+          voiceFinalText = "";
+          voiceInterimText = "";
+          pendingVoiceResult = null;
 
-      recognition.onresult = event => {
-        const transcript = Array.from(event.results)
-          .map(result => result[0].transcript)
-          .join(" ");
+          voiceBtn.classList.add("listening");
+          voiceBtn.textContent = "聞き取り中...";
+          voiceBtn.disabled = true;
+          voiceStopBtn.disabled = false;
+          applyVoiceBtn.disabled = true;
 
-        const result = parseVoiceInput(transcript);
+          if (voicePreview) {
+            voicePreview.style.display = "none";
+            voicePreview.textContent = "";
+          }
 
-        let html = `<strong>認識結果：</strong>${result.text}`;
+          voiceResult.innerHTML = "聞き取り中です。話し終えたら「停止」を押してください。<br>例：体重 72.5、体脂肪率 18.4、ウエスト 84";
+        };
 
-        if (result.updated.length > 0) {
-          html += `<br><strong>入力した項目：</strong>${result.updated.join("、")}`;
-        } else {
-          html += `<br><strong>入力した項目：</strong>なし`;
-        }
+        r.onresult = event => {
+          voiceInterimText = "";
 
-        if (result.unclear.length > 0) {
-          html += `<br><strong>入力しなかった項目：</strong>${result.unclear.join("、")}`;
-        }
+          for (let i = event.resultIndex; i < event.results.length; i++) {
+            const transcript = event.results[i][0].transcript;
 
-        voiceResult.innerHTML = html;
-      };
+            if (event.results[i].isFinal) {
+              voiceFinalText += transcript + " ";
+            } else {
+              voiceInterimText += transcript + " ";
+            }
+          }
 
-      recognition.onerror = event => {
-        voiceResult.innerHTML = `音声入力でエラーが発生しました：${event.error}`;
-      };
+          const displayText = (voiceFinalText + voiceInterimText).trim();
+          voiceResult.innerHTML = `<strong>認識中：</strong>${displayText || "..."}`;
+        };
 
-      recognition.onend = () => {
-        voiceBtn.classList.remove("listening");
-        voiceBtn.textContent = "音声入力";
-      };
+        r.onerror = event => {
+          if (event.error === "no-speech") {
+            voiceResult.innerHTML = "音声が検出されませんでした。もう一度「音声入力開始」を押してください。";
+          } else if (event.error === "not-allowed") {
+            voiceResult.innerHTML = "音声入力でエラーが発生しました：not-allowed<br>マイク権限、またはブラウザ側の音声認識許可を確認してください。";
+          } else {
+            voiceResult.innerHTML = `音声入力でエラーが発生しました：${event.error}`;
+          }
+        };
+
+        r.onend = () => {
+          const rawText = (voiceFinalText + voiceInterimText).trim();
+
+          isListening = false;
+          voiceBtn.classList.remove("listening");
+          voiceBtn.textContent = "音声入力開始";
+          voiceBtn.disabled = false;
+          voiceStopBtn.disabled = true;
+
+          if (rawText) {
+            const result = parseVoiceInput(rawText);
+            voiceResult.innerHTML = `<strong>聞き取り終了。</strong>内容を確認して「反映する」を押してください。`;
+            renderVoicePreview(result, rawText);
+          } else {
+            voiceResult.innerHTML = "聞き取り結果がありませんでした。もう一度お試しください。";
+          }
+        };
+
+        return r;
+      }
 
       voiceBtn.addEventListener("click", () => {
+        if (isListening) return;
+
         try {
+          if (recognition) {
+            recognition.abort();
+          }
+
+          recognition = createRecognition();
           recognition.start();
         } catch (e) {
           voiceResult.innerHTML = "音声入力を開始できませんでした。少し待ってから再度押してください。";
+          voiceBtn.disabled = false;
+          voiceStopBtn.disabled = true;
         }
       });
 
+      voiceStopBtn.addEventListener("click", () => {
+        if (!recognition || !isListening) return;
+
+        try {
+          recognition.stop();
+        } catch (e) {
+          recognition.abort();
+        }
+      });
+
+      applyVoiceBtn.addEventListener("click", applyVoiceResult);
+
       clearVoiceBtn.addEventListener("click", () => {
-        voiceResult.innerHTML = "例：「体重 72.5キロ、体脂肪率 18.4パーセント、腹囲 84センチ」";
+        if (recognition && isListening) {
+          recognition.abort();
+        }
+
+        voiceFinalText = "";
+        voiceInterimText = "";
+        pendingVoiceResult = null;
+
+        voiceResult.innerHTML = "例：「体重 72.5、体脂肪率 18.4、ウエスト 84」<br>※腹囲は「ウエスト」と話すと認識されやすいです。";
+        if (voicePreview) {
+          voicePreview.style.display = "none";
+          voicePreview.textContent = "";
+        }
+
+        voiceBtn.disabled = false;
+        voiceStopBtn.disabled = true;
+        applyVoiceBtn.disabled = true;
       });
     }
-
 
     document.getElementById("saveBtn").addEventListener("click", saveForm);
     document.getElementById("settingsBtn").addEventListener("click", openSettings);
