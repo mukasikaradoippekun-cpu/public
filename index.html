@@ -509,8 +509,7 @@
           <button id="voiceBtn" class="primary" type="button">音声入力開始</button>
         </div>
         <div class="hint">
-          ※ボタンを押すと専用画面で1項目ずつ音声入力します。入力済みの項目は自動スキップします。
-        </div>
+          ※ボタンを押すと専用画面で1項目ずつ音声入力します。入力済みの項目は自動スキップします。<br>ver.20260506-voicefix2</div>
       </div>
 
       <div class="section-title">基本項目</div>
@@ -739,6 +738,8 @@
     let voiceAutoCanceled = false;
     let voiceAutoSessionId = 0;
     let voiceAutoRetryTimer = null;
+    let voiceAutoRetryCount = 0;
+    const VOICE_AUTO_MAX_RETRY = 3;
     let voiceFinalText = "";
     let voiceInterimText = "";
 
@@ -1662,10 +1663,24 @@
     function scheduleVoiceAutoRetry(sessionId, delay = 1000) {
       clearVoiceAutoRetryTimer();
 
+      if (voiceAutoCanceled) return;
+      if (sessionId !== voiceAutoSessionId) return;
+
+      voiceAutoRetryCount++;
+
+      if (voiceAutoRetryCount > VOICE_AUTO_MAX_RETRY) {
+        voiceAutoListening = false;
+        renderVoiceAutoList();
+        setVoiceAutoResult("音声認識に連続失敗しました。項目をタップして再試行してください。");
+        return;
+      }
+
       voiceAutoRetryTimer = setTimeout(() => {
         if (voiceAutoCanceled) return;
         if (sessionId !== voiceAutoSessionId) return;
-        if (!document.getElementById("voiceAutoModal").classList.contains("show")) return;
+
+        const modal = document.getElementById("voiceAutoModal");
+        if (!modal || !modal.classList.contains("show")) return;
 
         startVoiceAutoRecognition(sessionId);
       }, delay);
@@ -1675,6 +1690,7 @@
       clearVoiceAutoRetryTimer();
 
       voiceAutoCanceled = false;
+      voiceAutoRetryCount = 0;
       voiceAutoSessionId += 1;
 
       seedVoiceValuesFromInputs();
@@ -1730,6 +1746,7 @@
 
         if (result.ok) {
           voiceAutoValues[metric.key] = result.value;
+          voiceAutoRetryCount = 0;
           voiceAutoListening = false;
           renderVoiceAutoList();
           setVoiceAutoResult(`認識結果：${result.text}<br><strong>${result.message}</strong>`);
@@ -1760,6 +1777,8 @@
           scheduleVoiceAutoRetry(sessionId, 1000);
         } else if (event.error === "not-allowed") {
           setVoiceAutoResult("音声入力でエラーが発生しました：not-allowed<br>マイク権限を確認してください。");
+        } else if (event.error === "aborted") {
+          return;
         } else {
           setVoiceAutoResult(`音声入力エラー：${event.error}<br>同じ項目をもう一度聞き取ります。`);
           scheduleVoiceAutoRetry(sessionId, 1000);
@@ -1813,15 +1832,27 @@
 
       if (voiceAutoRecognition) {
         try {
-          voiceAutoRecognition.onresult = null;
-          voiceAutoRecognition.onerror = null;
-          voiceAutoRecognition.onend = null;
-          voiceAutoRecognition.abort();
+          const recognition = voiceAutoRecognition;
+
+          recognition.onresult = null;
+          recognition.onerror = null;
+          recognition.onend = null;
+          recognition.onspeechend = null;
+          recognition.onnomatch = null;
+          recognition.stop();
+
+          setTimeout(() => {
+            try {
+              recognition.abort();
+            } catch (e) {}
+          }, 50);
+
         } catch (e) {}
       }
 
       voiceAutoRecognition = null;
       voiceAutoListening = false;
+      voiceAutoRetryCount = 0;
 
       document.getElementById("voiceAutoModal").classList.remove("show");
       renderVoiceAutoList();
