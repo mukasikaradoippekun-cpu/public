@@ -509,7 +509,7 @@
           <button id="voiceBtn" class="primary" type="button">音声入力開始</button>
         </div>
         <div class="hint">
-          ※ボタンを押すと専用画面で1項目ずつ音声入力します。入力済みの項目は自動スキップします。<br>ver.20260506-voicefix2</div>
+          ※ボタンを押すと専用画面で1項目ずつ音声入力します。入力済みの項目は自動スキップします。<br>ver.20260517-start100graph</div>
       </div>
 
       <div class="section-title">基本項目</div>
@@ -531,7 +531,7 @@
       <canvas id="chart" width="1200" height="430"></canvas>
       <div class="buttons" id="metricButtons"></div>
       <div class="hint">
-        初期表示は「過去1か月・全要素」です。全要素表示時のみ0〜100に自動スケーリングします。グラフをタップすると全画面表示します。
+        初期表示は「過去1か月・全要素」です。全要素表示時は、表示期間の初回値を100として指数化します。グラフをタップすると全画面表示します。
       </div>
     </section>
   </main>
@@ -1152,8 +1152,52 @@
       const primaryMetrics = selected.filter(m => !(m.secondary && !isAll));
       const secondaryMetrics = selected.filter(m => m.secondary && !isAll);
 
+      function indexedValue(record, metric) {
+        const base = Number(data[0] && data[0][metric.key]);
+        const current = Number(record[metric.key]);
+
+        if (!Number.isFinite(base) || base === 0 || !Number.isFinite(current)) {
+          return null;
+        }
+
+        return (current / base) * 100;
+      }
+
+      function getAllIndexedRange(metricList) {
+        const values = [];
+
+        data.forEach(record => {
+          metricList.forEach(metric => {
+            const indexed = indexedValue(record, metric);
+            if (Number.isFinite(indexed)) {
+              values.push(indexed);
+            }
+          });
+        });
+
+        if (values.length === 0) {
+          return { min: 99, max: 101 };
+        }
+
+        let min = Math.min(...values);
+        let max = Math.max(...values);
+
+        // 基準の100は必ず縦軸内に含める
+        min = Math.min(min, 100);
+        max = Math.max(max, 100);
+
+        if (min === max) {
+          min -= 1;
+          max += 1;
+        }
+
+        const pad = Math.max((max - min) * 0.1, 0.5);
+        return { min: min - pad, max: max + pad };
+      }
+
       function getRange(metricList, scaled) {
-        if (scaled) return { min: 0, max: 100 };
+        if (scaled) return getAllIndexedRange(metricList);
+
         const values = [];
         data.forEach(r => metricList.forEach(m => values.push(r[m.key])));
         let min = Math.min(...values);
@@ -1185,7 +1229,7 @@
       for (let i = 0; i <= 5; i++) {
         const value = primaryRange.max - (primaryRange.max - primaryRange.min) * i / 5;
         const y = margin.top + innerH * i / 5;
-        ctx.fillText(isAll ? Math.round(value) : formatAxis(value), margin.left - 8, y + 4);
+        ctx.fillText(isAll ? value.toFixed(1) : formatAxis(value), margin.left - 8, y + 4);
       }
 
       if (secondaryRange) {
@@ -1211,6 +1255,22 @@
         ctx.stroke();
       }
 
+      if (isAll && primaryRange.min < 100 && primaryRange.max > 100) {
+        const baseY = yFor(100, primaryRange);
+        ctx.save();
+        ctx.setLineDash([5, 5]);
+        ctx.strokeStyle = "#9ca3af";
+        ctx.beginPath();
+        ctx.moveTo(margin.left, baseY);
+        ctx.lineTo(cssWidth - margin.right, baseY);
+        ctx.stroke();
+        ctx.restore();
+
+        ctx.fillStyle = "#6b7280";
+        ctx.textAlign = "left";
+        ctx.fillText("100", margin.left + 4, baseY - 6);
+      }
+
       ctx.save();
       ctx.beginPath();
       ctx.rect(margin.left, margin.top, innerW, innerH);
@@ -1231,9 +1291,13 @@
         data.forEach((record, i) => {
           let value = record[metric.key];
           let displayValue = value;
+          let indexedDisplayValue = null;
 
           if (isAll) {
-            value = max === min ? 50 : ((value - min) / (max - min)) * 100;
+            const indexed = indexedValue(record, metric);
+            if (!Number.isFinite(indexed)) return;
+            value = indexed;
+            indexedDisplayValue = indexed;
           }
 
           const x = xFor(i);
@@ -1247,6 +1311,7 @@
             date: record.date,
             metric: metric.name,
             value: displayValue,
+            indexedValue: indexedDisplayValue,
             unit: metric.unit,
             color
           });
@@ -1255,8 +1320,13 @@
 
         data.forEach((record, i) => {
           let value = record[metric.key];
-          let displayValue = value;
-          if (isAll) value = max === min ? 50 : ((value - min) / (max - min)) * 100;
+
+          if (isAll) {
+            const indexed = indexedValue(record, metric);
+            if (!Number.isFinite(indexed)) return;
+            value = indexed;
+          }
+
           const x = xFor(i);
           const y = yFor(value, range);
           if (x < margin.left - 8 || x > cssWidth - margin.right + 8) return;
@@ -1298,7 +1368,7 @@
       if (isAll) {
         ctx.fillStyle = "#6b7280";
         ctx.textAlign = "right";
-        ctx.fillText("全要素：0〜100自動スケーリング", cssWidth - 16, cssHeight - 18);
+        ctx.fillText("全要素：初回値=100指数表示", cssWidth - 16, cssHeight - 18);
       }
 
       return plotPoints;
@@ -1329,7 +1399,10 @@
         return;
       }
 
-      tooltip.innerHTML = `${nearest.date}<br>${nearest.metric}：${nearest.value}${nearest.unit}`;
+      const indexedText = Number.isFinite(nearest.indexedValue)
+        ? `<br>指数：${nearest.indexedValue.toFixed(2)}`
+        : "";
+      tooltip.innerHTML = `${nearest.date}<br>${nearest.metric}：${nearest.value}${nearest.unit}${indexedText}`;
       tooltip.style.left = Math.min(window.innerWidth - 270, Math.max(8, clientX + 12)) + "px";
       tooltip.style.top = Math.max(8, clientY + 12) + "px";
       tooltip.style.display = "block";
